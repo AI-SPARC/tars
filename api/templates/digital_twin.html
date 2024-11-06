@@ -1,13 +1,144 @@
 <html>
   <head>
     <script src="{{ url_for('static', path='lib/aframe-v1.6.0.min.js') }}"></script>
+    <script src="{{ url_for('static', path='lib/aframe-extras.controls.min.js') }}"></script>
+    <script src="{{ url_for('static', path='lib/mqtt.min.js') }}"></script>
+    <script src="{{ url_for('static', path='scripts/digital_twin/client.js') }}"></script>
+    <script src="{{ url_for('static', path='scripts/digital_twin/vr_controller.js') }}"></script>
+    <script src="{{ url_for('static', path='scripts/digital_twin/vr_components.js') }}"></script>
   </head>
   <body>
     <a-scene>
       <a-assets>
-        <a-asset-item id="warehouse" src="{{ url_for('static', path='assets/warehouse.glb') }}"></a-asset-item>
+        <a-asset-item id="warehouse" src="{{ url_for('static', path='assets/warehouse/warehouse_low_poly.gltf') }}"></a-asset-item>
+        <a-asset-item id="kukaYouBot" src="{{ url_for('static', path='assets/kuka_youbot/kuka_youbot.gltf')}}"></a-asset-item>
+        <a-asset-item id="kukaOmnirob" src="{{ url_for('static', path='assets/kuka_omnirob/kuka_omnirob.gltf') }}"></a-asset-item>
       </a-assets>
+      
+      <a-entity
+        movement-controls="speed: 0.1; camera: #camera;"
+        position="0 0.2 0"
+        id="#player"
+        >
+          <a-entity
+            camera="near:0.01;"
+            look-controls
+            fov="100"
+            id="#camera"
+            position="0 1.65 0"
+          >
+          </a-entity>
+
+          <a-entity
+            id="leftController"
+            oculus-touch-controls="hand: left;"
+            notebook-page-flipper
+            tutorial
+            haptics
+          >
+            <a-entity
+              cursor="fuse: true; fuseTimeout: 500"
+              position="0 0 -.1"
+              geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+              material="color: gray; shader: flat"
+              raycaster="objects: .clicable; showLine: true; far: 100; lineColor: red; lineOpacity: 0.5"
+            >
+            </a-entity>
+          </a-entity>
+
+          <a-entity
+            id="rightController"
+            oculus-touch-controls="hand: right;"
+          >
+            <a-entity
+              cursor="fuse: true; fuseTimeout: 500"
+              position="0 0 -.1"
+              geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+              material="color: gray; shader: flat"
+              raycaster="objects: .clicable; showLine: true; far: 100; lineColor: red; lineOpacity: 0.5"
+            >
+            </a-entity>
+          </a-entity>
+        </a-entity>
+
+
+      <!-- Robots -->
+        <!-- Youbots -->
+      <a-entity id="kukaYoubot-01" gltf-model="#kukaYouBot" position="0.2 0.15 6.5" rotation="0 0 0">
+        <!-- <a-entity id="kukaYoubot-01-hud" geometry="primitive: plane; width: 1; height: 1;" material="side: double; color: black; opacity: 0.75" position="0 1 0" rotation="0 180 0">
+          <a-entity text="value: kukaYoubot/v2/ic/001; align: center; side: double; width: 2;" position="0 0.4 0"></a-entity>
+          <a-entity text="value: Connection: Online; align: center; side: double; width: 1.5;" position="0 0.25 0"></a-entity>
+          <a-entity text="value: Order Id:007; align: center; side: double; width: 1.5;" position="0 0.15 0"></a-entity>
+          <a-entity text="value: Status: Moving; align: center; side: double; width: 1.5;" position="0 0.05 0"></a-entity>
+          <a-entity text="value: Going to: Node02; align: center; side: double; width: 1.5;" position="0 -0.05 0"></a-entity>
+        </a-entity> -->
+      </a-entity>
+
+      <a-entity id="kukaYoubot-02" gltf-model="#kukaYouBot" position="-5 0.15 2.3" rotation="0 -90 0">
+        <!-- <a-entity id="kukaYoubot-02-hud" geometry="primitive: plane; width: 1; height: 1;" material="side: double; color: black; opacity: 0.75" position="0 1 0" rotation="0 180 0">
+          <a-entity text="value: kukaYoubot/v2/ic/002; align: center; side: double; width: 2;" position="0 0.4 0"></a-entity>
+          <a-entity text="value: Connection: Online; align: center; side: double; width: 1.5;" position="0 0.25 0"></a-entity>
+          <a-entity text="value: Order Id:None; align: center; side: double; width: 1.5;" position="0 0.15 0"></a-entity>
+          <a-entity text="value: Status: Idle; align: center; side: double; width: 1.5;" position="0 0.05 0"></a-entity>
+          <a-entity text="value: Going to: None; align: center; side: double; width: 1.5;" position="0 -0.05 0"></a-entity>
+        </a-entity> -->
+      </a-entity>
+        <!-- Omnirobs -->
+      <a-entity id="kukaOmnirob-01" gltf-model="#kukaOmnirob" position="0.2 0.15 -0.8" rotation="0 0 0">
+        <!-- <a-entity id="kukaOmnirob-01-hud" geometry="primitive: plane; width: 1; height: 1;" material="side: double; color: black; opacity: 0.75" position="0 1.5 0" rotation="0 180 0">
+          <a-entity text="value: kukaOmnirob/v2/ic/001; align: center; side: double; width: 2;" position="0 0.4 0"></a-entity>
+          <a-entity text="value: Connection: Online; align: center; side: double; width: 1.5;" position="0 0.25 0"></a-entity>
+          <a-entity text="value: Order Id: 015; align: center; side: double; width: 1.5;" position="0 0.15 0"></a-entity>
+          <a-entity text="value: Status: Moving; align: center; side: double; width: 1.5;" position="0 0.05 0"></a-entity>
+          <a-entity text="value: Going to: Node03; align: center; side: double; width: 1.5;" position="0 -0.05 0"></a-entity>
+        </a-entity> -->
+      </a-entity>
+
+      <!-- Graph -->
+      <!-- Nodes -->
+      <a-circle id="node01" color="#CCC" radius="0.5" position="0.2 0.1 9.2" rotation="-90 0 0"></a-circle>
+      <a-circle id="node02" color="#CCC" radius="0.5" position="0.2 0.1 2.34" rotation="-90 0 0"></a-circle>
+      <a-circle id="node03" color="#CCC" radius="0.5" position="0.2 0.1 -11.5" rotation="-90 0 0"></a-circle>
+        <!-- Right Nodes -->
+      <a-circle id="node04" color="#CCC" radius="0.5" position="5 0.1 -11.5" rotation="-90 0 0"></a-circle>
+      <a-circle id="node05" color="#CCC" radius="0.5" position="5 0.1 2.34" rotation="-90 0 0"></a-circle>
+      <a-circle id="node06" color="#CCC" radius="0.5" position="5 0.1 9.2" rotation="-90 0 0"></a-circle>
+        <!-- Left Nodes -->
+      <a-circle id="node07" color="#CCC" radius="0.5" position="-5 0.1 -11.5" rotation="-90 0 0"></a-circle>
+      <a-circle id="node08" color="#CCC" radius="0.5" position="-5 0.1 2.34" rotation="-90 0 0"></a-circle>
+      <a-circle id="node09" color="#CCC"radius="0.5" position="-5 0.1 9.2" rotation="-90 0 0"></a-circle>
+
+      <!-- Edges -->
+      <a-plane id="edge01_02" color="#CCC" scale="7 0.1 0.1" position="0.2 0.09 5.723" rotation="-90 90 0"></a-plane>
+      <a-plane id="edge02_03" color="#CCC" scale="14 0.1 0.1" position="0.2 0.09 -4.725" rotation="-90 90 0"></a-plane>
+        <!-- Right Edges -->
+      <a-plane id="edge03_04" color="#CCC" scale="5 0.1 0.1" position="2.614 0.09 -11.500" rotation="-90 0 0"></a-plane>
+      <a-plane id="edge04_05" color="#CCC" scale="14 0.1 5" position="5 0.09 -4.725" rotation="-90 90 0"></a-plane>
+      <a-plane id="edge05_02" color="#CCC" scale="5 0.1 0.1" position="2.614 0.09 2.34" rotation="-90 0 0"></a-plane>
+      <a-plane id="edge05_06" color="#CCC" scale="7 0.1 5" position="5 0.09 5.723" rotation="-90 90 0"></a-plane>
+      <a-plane id="edge06_01" color="#CCC" scale="5 0.1 0.1" position="2.614 0.09 9.2" rotation="-90 0 0"></a-plane>
+        <!-- Left Edges -->
+      <a-plane id="edge03_07" color="#CCC" scale="5 0.1 0.1" position="-2.614 0.09 -11.500" rotation="-90 0 0"></a-plane>
+      <a-plane id="edge07_08" color="#CCC" scale="14 0.1 5" position="-5 0.09 -4.725" rotation="-90 90 0"></a-plane>
+      <a-plane id="edge08_02" color="#CCC" scale="5 0.1 0.1" position="-2.614 0.09 2.34" rotation="-90 0 0"></a-plane>
+      <a-plane id="edge08_09" color="#CCC" scale="7 0.1 5" position="-5 0.09 5.723" rotation="-90 90 0"></a-plane>
+      <a-plane id="edge09_01" color="#CCC" scale="5 0.1 0.1" position="-2.614 0.09 9.2" rotation="-90 0 0"></a-plane>
+
+      <!-- Lights -->
+      <!-- Middle -->
+      <a-light type="directional" intensity="0.5" color="#FFFFFF" position="-4 3.4 1"></a-light>
+      <a-light type="directional" intensity="0.5" color="#FFFFFF" position="-0.17 3.8 0.1"></a-light>
+      <a-light type="directional" intensity="0.5" color="#FFFFFF" position="4 3.4 1"></a-light>
+
+      <!-- Front -->
+      <a-light type="directional" intensity="0.1" color="#FFFFFF" position="-4 3.4 -11"></a-light>
+      <a-light type="directional" intensity="0.1" color="#FFFFFF" position="-0.17 3.8 -11"></a-light>
+      <a-light type="directional" intensity="0.1" color="#FFFFFF" position="4 3.4 -11"></a-light>
+
+      <!-- Warehouse -->
       <a-entity gltf-model="#warehouse"></a-entity>
+
+      <a-sky color="black"></a-sky>
     </a-scene>
   </body>
 </html>
