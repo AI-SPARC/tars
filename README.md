@@ -1,22 +1,14 @@
-# Fleet Management System 🚘
+# Task Allocation and Routing System
 
-<img align="left" width="150" height="150" src="./docs/img/fleet-manager-icon.png">
+The Task Allocation and Routing System, or simply T.A.R.S, is a fleet manager developed to manage AGV (Automated Guided Vehicle) fleets efficiently, 
+scalably and in compliance with the VDA5050 standard. 
 
-### A master control for automated guided vehicles(AGVs) following the VDA-5050 standard.
-Write something here... 
-
-Write something here... 
-
-Write something here... 
-
-
-
+<!---
 ## 🛠 Prerequisites
 
 Before you begin, make sure you have installed the following tools:
 
-- [Miniconda](https://docs.anaconda.com/free/miniconda/) (24.4.0)
-- [NodeJS (Optional)](https://nodejs.org/en/download/package-manager/current) (22.3.0)
+- [Miniconda](https://docs.anaconda.com/free/miniconda/)
 
 ## ⚙ Installing
 
@@ -102,3 +94,4 @@ Esse projeto está sob licença. Veja o arquivo [LICENÇA](LICENSE.md) para mais
 
 * [VDA-5050](https://github.com/VDA5050/VDA5050)
 * Add more references...
+-->
