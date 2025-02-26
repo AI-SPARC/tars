@@ -2,6 +2,7 @@
 # Core Framework
 # -----------------------
 fastapi==0.115.8
+fastapi-pagination==0.12.34
 uvicorn[standard]==0.34.0
 
 # -----------------------
@@ -10,6 +11,7 @@ uvicorn[standard]==0.34.0
 SQLAlchemy[asyncio]==2.0.38
 asyncpg==0.30.0
 alembic==1.14.1
+aiosqlite==0.21.0
 
 # -----------------------
 # MQTT Communication
