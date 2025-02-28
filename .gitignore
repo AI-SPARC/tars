@@ -1,3 +1,65 @@
-__pycache__
-venv
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
 .env
+*.env
+.venv/
+venv/
+pip-log.txt
+*.log
+coverage/
+htmlcov/
+.mypy_cache/
+.pytest_cache/
+*.sqlite3
+
+# FastAPI specific
+instance/
+*.db
+*.pyd
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+package-lock.json
+yarn.lock
+.pnp.*
+.cache/
+.vscode/
+dist/
+build/
+
+# React
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+coverage/
+public/static/
+public/assets/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Docker
+*.pid
+docker-compose.override.yml
+
+# Misc
+*.bak
+*.tmp
+*.log
