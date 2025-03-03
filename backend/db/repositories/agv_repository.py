@@ -3,11 +3,10 @@ from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError
 from typing import Optional
 from fastapi_pagination.ext.sqlalchemy import paginate
-from fastapi_pagination import Page
+from fastapi_pagination import Page, Params
 
 from db.models.agv_model import AGVModel
 from schemas.agv_schema import AGVCreate
-
 
 class AGVRepository:
     """
@@ -15,7 +14,7 @@ class AGVRepository:
     """
 
     @staticmethod
-    async def get_agvs(session: AsyncSession) -> Page[AGVModel]:
+    async def get_agvs(session: AsyncSession,  params: Params = Params()) -> Page[AGVModel]:
         """
         Retrieve a paginated list of AGVs.
 
@@ -25,7 +24,7 @@ class AGVRepository:
         """
         try:
             query = select(AGVModel)
-            return await paginate(session, query)
+            return await paginate(session, query, params=params)
         except SQLAlchemyError as e:
             raise RuntimeError(f"Database error while fetching AGVs: {str(e)}") from e
 

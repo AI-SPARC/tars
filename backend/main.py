@@ -38,10 +38,5 @@ add_pagination(app)
 app.include_router(api_router)
 
 
-@app.get("/")
-def root():
-    """Root endpoint to check API status."""
-    return {"message": "Fleet Manager API is running."}
-
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, log_level="info", reload=False)
