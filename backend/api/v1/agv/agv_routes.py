@@ -12,7 +12,6 @@ router = APIRouter(
     responses={404: {"description": "AGV not found"}},
 )
 
-
 @router.get(
     "/",
     response_model=Page[AGVRead],
@@ -34,7 +33,6 @@ async def list_agvs(db: AsyncSession = Depends(get_session)):
     - **500 Internal Server Error** if an unexpected issue occurs.
     """
     return await AGVService.get_all_agvs(db)
-
 
 @router.get(
     "/{agv_id}",
@@ -63,7 +61,6 @@ async def get_agv(agv_id: str, db: AsyncSession = Depends(get_session)):
     if not agv:
         raise HTTPException(status_code=404, detail="AGV not found")
     return agv
-
 
 @router.post(
     "/",
