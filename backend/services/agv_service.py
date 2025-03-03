@@ -4,7 +4,6 @@ from typing import Optional
 from db.repositories.agv_repository import AGVRepository
 from schemas.agv_schema import AGVCreate, AGVRead
 
-
 class AGVService:
     """
     Service layer for handling AGV business logic.
