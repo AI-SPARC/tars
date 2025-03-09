@@ -1,0 +1,17 @@
+# -----------------------
+# MQTT Communication
+# -----------------------
+paho-mqtt==2.1.0
+aiomqtt==2.3.0
+typing_extensions==4.12.2
+
+
+# -----------------------
+# Websocket Communication
+# -----------------------
+websockets==15.0.1
+
+# -----------------------
+# Environment Variables
+# -----------------------
+python-dotenv==1.0.1
