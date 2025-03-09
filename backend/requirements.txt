@@ -13,10 +13,6 @@ asyncpg==0.30.0
 alembic==1.14.1
 aiosqlite==0.21.0
 
-# -----------------------
-# MQTT Communication
-# -----------------------
-paho-mqtt==2.1.0
 
 # -----------------------
 # Data Validation & Settings
