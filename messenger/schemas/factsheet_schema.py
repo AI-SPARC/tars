@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 
 from schemas.header_schema import Header
-from schemas.factsheet_utils_schema import MaxStringLens, MaxArrayLens, Timing
+from schemas.factsheet_utils_schema import ActionParameter, AgvAction, BlockingTypesEnum, Envelope2d, Envelope3d, LoadSet, MaxStringLens, MaxArrayLens, Network, OptionalParameter, Timing, VersionInfo, WheelDefinition
 
 
 class TypeSpecification(BaseModel):
@@ -35,21 +35,28 @@ class ProtocolFeatures(BaseModel):
     optionalParameters : List[OptionalParameter]
     agvActions : List[AgvAction]
     actionParameters : List[ActionParameter]
+    resultDescription : str = Field(..., description="Free-form text: description of the result.")
+    blockingTypes : List[BlockingTypesEnum]
     
-class Navigation(BaseModel):
-    navigationType: str = Field(..., description="Tipo de navegação utilizada pelo AGV.")
-    speed: float = Field(..., description="Velocidade máxima do AGV em m/s.")
+class AgvGeometry(BaseModel):
+    wheelDefinitions : List[WheelDefinition]
+    envelopes2d  : List[Envelope2d]
+    envelopes3d : List[Envelope3d]
+    
+class LoadSpecification(BaseModel):
+    loadPositions : List[str] = Field(..., description="Array of load positions / load handling devices. This array contains the valid values for the parameter state.loads[].loadPosition and for the action parameter lhd of the actions pick and drop. If this array doesn't exist or is empty, the AGV has no load handling device.")
+    loadSet : LoadSet
 
-class Communication(BaseModel):
-    interface: str = Field(..., description="Interface de comunicação utilizada pelo AGV.")
-    protocol: str = Field(..., description="Protocolo de comunicação utilizado pelo AGV.")
-
+class VehicleConfig(BaseModel):
+    versions : List[VersionInfo]
+    network : Network
 class Factsheet(BaseModel):
     header: Header
-    safety: Safety
-    battery: Battery
-    dimensions: Dimensions
-    load: Load
-    navigation: Navigation
-    communication: Communication
+    typeSpecification: TypeSpecification
+    physicalParameters: PhysicalParameters
+    protocolLimits: ProtocolLimits
+    protocolFeatures: ProtocolFeatures
+    agvGeometry: AgvGeometry
+    loadSpecification: LoadSpecification
+    vehicleConfig : VehicleConfig
     additionalInfo: Optional[str] = Field(None, description="Informações adicionais sobre o AGV.")
