@@ -8,7 +8,7 @@ class SupportEnum(str, Enum):
     REQUIRED = "REQUIRED"
     
 class ActionScopesEnum(str, Enum):
-    INSTANT = "NODE"
+    INSTANT = "INSTANT"
     NODE = "NODE"
     EDGE = "EDGE"
     
@@ -45,7 +45,7 @@ class PolygonPoint(BaseModel):
 class LoadSet(BaseModel):
     setName : str = Field(..., description="Unique name of the load set, e.g., DEFAULT, SET1, etc.")
     loadType : str = Field(..., description="Type of load, e.g., EPAL, XLT1200, etc.")
-    loadPositions : str = Field(..., description="Array of load positions btw. load handling devices, this load set is valid for. If this parameter does not exist or is empty, this load set is valid for all load handling devices on this AGV.")	
+    loadPositions : List[str] = Field(..., description="Array of load positions btw. load handling devices, this load set is valid for. If this parameter does not exist or is empty, this load set is valid for all load handling devices on this AGV.")	
     # boundingBoxReference	JSON object	Bounding box reference as defined in parameter loads[] in state message.
     # loadDimensions	JSON object	Load dimensions as defined in parameter loads[] in state message.
     maxWeight : float = Field(..., description="[kg], maximum weight of load type.")
@@ -67,8 +67,8 @@ class VersionInfo(BaseModel):
     value : str = Field(..., description="The version corresponding to the key. (e.g., v1.12.4-beta)")
 
 class Network(BaseModel):
-    dnsServers : str = Field(..., description="Array of Domain Name Servers (DNS) used by the vehicle.")
-    ntpServers : str = Field(..., description="Array of Network Time Protocol (NTP) servers used by the vehicle.")
+    dnsServers : List[str] = Field(..., description="Array of Domain Name Servers (DNS) used by the vehicle.")
+    ntpServers : List[str] = Field(..., description="Array of Network Time Protocol (NTP) servers used by the vehicle.")
     localIpAddress : str = Field(..., description="A priori assigned IP address used to communicate with the MQTT broker. Note that this IP address should not be modified/changed during operations.")
     netmask : str = Field(..., description="The subnet mask used in the network configuration corresponding to the local IP address.")
     defaultGateway : str = Field(..., description="The default gateway used by the vehicle, corresponding to the local IP address.")
