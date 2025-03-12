@@ -15,3 +15,9 @@ websockets==15.0.1
 # Environment Variables
 # -----------------------
 python-dotenv==1.0.1
+
+# -----------------------
+# Data Validation & Settings
+# -----------------------
+pydantic==2.10.6
+pydantic-settings==2.8.0
