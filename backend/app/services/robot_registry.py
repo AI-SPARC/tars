@@ -56,6 +56,7 @@ class RobotRegistryService:
     ) -> RobotStateSnapshot:
         robot = await self._get_robot_or_raise(robot_id)
         battery_state = payload.get("batteryState") or {}
+        power_supply = payload.get("powerSupply") or {}
         snapshot = RobotStateSnapshot(
             robot_id=robot.id,
             header_id=payload.get("headerId"),
@@ -63,7 +64,7 @@ class RobotRegistryService:
             order_update_id=payload.get("orderUpdateId"),
             last_node_id=payload.get("lastNodeId"),
             last_node_sequence_id=payload.get("lastNodeSequenceId"),
-            battery_charge=battery_state.get("batteryCharge"),
+            battery_charge=power_supply.get("stateOfCharge", battery_state.get("batteryCharge")),
             operating_mode=payload.get("operatingMode"),
             errors=payload.get("errors"),
             safety_state=payload.get("safetyState"),

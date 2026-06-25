@@ -120,9 +120,13 @@ class MqttMessageLog(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     direction: Mapped[str] = mapped_column(String(16), nullable=False)
     topic: Mapped[str] = mapped_column(String(500), nullable=False)
+    qos: Mapped[int] = mapped_column(default=0)
+    retain: Mapped[bool] = mapped_column(default=False)
+    robot_id: Mapped[str | None] = mapped_column(ForeignKey("robots.id"))
     message_type: Mapped[str] = mapped_column(String(64), nullable=False)
     payload: Mapped[dict[str, Any]] = mapped_column(json_type(), nullable=False)
     schema_valid: Mapped[bool] = mapped_column(default=False)
+    validation_errors: Mapped[list[str]] = mapped_column(json_type(), default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

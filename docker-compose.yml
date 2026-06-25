@@ -38,6 +38,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://tars:tars@postgres:5432/tars
       MQTT_HOST: mosquitto
+      MQTT_ENABLED: "true"
     ports:
       - "8000:8000"
     depends_on:

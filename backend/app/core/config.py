@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./tars.db"
     mqtt_host: str = "localhost"
     mqtt_port: int = 1883
+    mqtt_enabled: bool = False
     mqtt_interface_name: str = "vda5050"
     vda5050_major_version: str = "v3"
     vda5050_protocol_version: str = "3.0.0"
