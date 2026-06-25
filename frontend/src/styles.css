@@ -1,0 +1,123 @@
+:root {
+  color: #e5eefb;
+  background: #0b1020;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  border-right: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.86);
+  padding: 24px;
+}
+
+.brand {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: #38bdf8;
+  color: #020617;
+  font-weight: 900;
+}
+
+.brand small,
+.status-card small,
+.cards span {
+  display: block;
+  color: #94a3b8;
+}
+
+nav {
+  display: grid;
+  gap: 8px;
+}
+
+nav a {
+  color: #cbd5e1;
+  text-decoration: none;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+nav a:hover {
+  background: rgba(56, 189, 248, 0.12);
+  color: #ffffff;
+}
+
+.content {
+  padding: 48px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 32px;
+  align-items: stretch;
+}
+
+.eyebrow {
+  color: #38bdf8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+h1 {
+  font-size: clamp(2.5rem, 5vw, 5rem);
+  line-height: 0.95;
+  margin: 0;
+  max-width: 980px;
+}
+
+.hero p:not(.eyebrow) {
+  color: #cbd5e1;
+  max-width: 760px;
+  font-size: 1.1rem;
+}
+
+.status-card,
+.cards article {
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(15, 23, 42, 0.72);
+  border-radius: 24px;
+  padding: 24px;
+}
+
+.status-card strong {
+  display: block;
+  margin: 12px 0;
+  font-size: 1.5rem;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.cards strong {
+  display: block;
+  margin-bottom: 8px;
+}

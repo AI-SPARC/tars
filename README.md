@@ -1,97 +1,62 @@
-# Task Allocation and Routing System
+# TARS — VDA 5050 Open-Source Fleet Manager
 
-The Task Allocation and Routing System, or simply T.A.R.S, is a fleet manager developed to manage AGV (Automated Guided Vehicle) fleets efficiently, 
-scalably and in compliance with the VDA5050 standard. 
+TARS is an open-source research-oriented fleet manager for heterogeneous mobile robot fleets, targeting **VDA 5050 v3.0.0**.
 
-<!---
-## 🛠 Prerequisites
+The project is intentionally built as a web application with a reproducible Docker setup and no user login in the MVP, so it can be used in laboratories, teaching, simulations, and algorithm research.
 
-Before you begin, make sure you have installed the following tools:
+## Scope
 
-- [Miniconda](https://docs.anaconda.com/free/miniconda/)
+- Fleet control for VDA 5050 v3.0.0 mobile robots.
+- MQTT communication through Mosquitto.
+- JSON Schema validation using the official VDA 5050 v3.0.0 schemas.
+- FastAPI backend, PostgreSQL persistence, React/TypeScript frontend.
+- Research-friendly observability: MQTT logs, state snapshots, mission history, map graph and routing.
 
-## ⚙ Installing
+## Quickstart
 
-To install the application, follow these steps:
-
-1. Create an virtual enviroment using conda and activate it:
-```
-conda create --name fleet_management python=3.11.9
-conda activate fleet_management
-```
-
-2. Install the dependecies with pip:
-```
-pip install -r .\requirements.txt
+```bash
+cp .env.example .env
+docker compose up --build
 ```
 
-3. Populate the .env with the Discord Token:
-```
-BROKER_ADDRESS=write your broker address here
-BROKER_PORT=write your broker port here
-```
+Services:
 
-## 🚀 Running
+- Backend API: http://localhost:8000
+- OpenAPI docs: http://localhost:8000/docs
+- Frontend: http://localhost:5173
+- MQTT broker: localhost:1883
+- PostgreSQL: localhost:5432
 
-To start the server you just need to execute the main.py file, like this:
+## VDA 5050 target
 
-```
-python main.py
-```
-* You can acess the landing page at:
-```
-http://localhost:3000/
-```
+This repository targets VDA 5050 **v3.0.0**.
 
-* The API docs is at:
-```
-http://localhost:3000/docs
+Suggested local MQTT topic structure:
+
+```text
+vda5050/v3/{manufacturer}/{serialNumber}/{topic}
 ```
 
-* And the MQTT messages docs is at:
-```
-http://localhost:3000/mqtt
-```
+Relevant topics:
 
-## 🤩 Collaborators
+- `order`
+- `instantActions`
+- `state`
+- `connection`
+- `factsheet`
+- `visualization`
+- `zoneSet`
+- `responses`
 
-We thank the following people who contributed to this project:
+## Development
 
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://github.com/vannisson" title="Vannisson Github Profile">
-        <img src="https://github.com/vannisson.png" width="100px;" alt="Geovane Github Profile Photo"/><br>
-        <sub>
-          <b>Geovane Filho</b>
-        </sub>
-      </a>
-    </td>
-    <td align="center">
-      <a href="https://github.com/becacoli" title="Becacoli Github Profile">
-        <img src="https://github.com/becacoli.png" width="100px;" alt="Becacoli Github Profile Photo"/><br>
-        <sub>
-          <b>Rebeca Queiroz</b>
-        </sub>
-      </a>
-    </td>
-    <td align="center">
-      <a href="https://github.com/glauberrleite" title="GlauberRLeite Github Profile">
-        <img src="https://github.com/glauberrleite.png" width="100px;" alt="Glauber Github Profile Photo"/><br>
-        <sub>
-          <b>Glauber Leite</b>
-        </sub>
-      </a>
-    </td>
-  </tr>
-</table>
+See:
 
-## 📜 License
+- `docs/architecture.md`
+- `docs/development.md`
+- `docs/vda5050-compliance.md`
+- `docs/mqtt-topics.md`
 
-Esse projeto está sob licença. Veja o arquivo [LICENÇA](LICENSE.md) para mais detalhes.
+## Status
 
-## 📚 References
-
-* [VDA-5050](https://github.com/VDA5050/VDA5050)
-* Add more references...
--->
+Early rewrite in progress. The initial deliverable is a Dockerized MVP foundation with VDA 5050 schema validation and MQTT-ready architecture.

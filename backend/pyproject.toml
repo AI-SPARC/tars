@@ -1,0 +1,46 @@
+[project]
+name = "tars-backend"
+version = "0.1.0"
+description = "VDA 5050 v3.0.0 open-source fleet manager backend"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.30.0",
+  "pydantic>=2.8.0",
+  "pydantic-settings>=2.4.0",
+  "sqlalchemy[asyncio]>=2.0.0",
+  "asyncpg>=0.29.0",
+  "alembic>=1.13.0",
+  "aiomqtt>=2.3.0",
+  "jsonschema>=4.23.0",
+  "networkx>=3.3",
+  "orjson>=3.10.0",
+  "structlog>=24.4.0",
+  "python-dotenv>=1.0.0",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3.0",
+  "pytest-asyncio>=0.24.0",
+  "httpx>=0.27.0",
+  "ruff>=0.8.0",
+  "mypy>=1.13.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = []

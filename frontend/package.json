@@ -1,0 +1,29 @@
+{
+  "name": "tars-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "vite": "latest",
+    "typescript": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "@tanstack/react-query": "latest",
+    "lucide-react": "latest"
+  },
+  "devDependencies": {
+    "vitest": "latest",
+    "jsdom": "latest",
+    "@testing-library/react": "latest",
+    "@testing-library/jest-dom": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest"
+  }
+}

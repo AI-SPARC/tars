@@ -1,0 +1,450 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Order Message",
+    "description": "The message schema to communicate orders from fleet control to the mobile robot.",
+    "subtopic": "/order",
+    "type": "object",
+    "required": [
+        "headerId",
+        "timestamp",
+        "version",
+        "manufacturer",
+        "serialNumber",
+        "orderId",
+        "orderUpdateId",
+        "nodes",
+        "edges"
+    ],
+    "properties": {
+        "headerId": {
+            "type": "integer",
+            "description": "headerId of the message. The headerId is defined per topic and incremented by 1 with each sent (but not necessarily received) message."
+        },
+        "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp in ISO8601 format (YYYY-MM-DDTHH:mm:ss.fffZ).",
+            "examples": [
+                "1991-03-11T11:40:03.123Z"
+            ]
+        },
+        "version": {
+            "type": "string",
+            "description": "Version of the protocol [Major].[Minor].[Patch]",
+            "examples": [
+                "1.3.2"
+            ]
+        },
+        "manufacturer": {
+            "type": "string",
+            "description": "Manufacturer of the mobile robot"
+        },
+        "serialNumber": {
+            "type": "string",
+            "description": "Serial number of the mobile robot."
+        },
+        "orderId": {
+            "description": "Order Identification. This is to be used to identify multiple order messages that belong to the same order.",
+            "type": "string"
+        },
+        "orderUpdateId": {
+            "description": "Order update identification. It is unique per orderId, starting at 0 for a new order. If an order update is rejected, this field shall be passed in the rejection message.",
+            "type": "integer",
+            "minimum": 0
+        },
+        "orderDescription": {
+            "description": "Additional human-readable information only for visualization purposes; this shall not be used for any logical processes.",
+            "type": "string"
+        },
+        "nodes": {
+            "description": "Array of nodes objects to be traversed for fulfilling the order. One node is enough for a valid order. Leave edge list empty for that case.",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/node"
+            }
+        },
+        "edges": {
+            "type": "array",
+            "description": "Directional connection between two nodes. Array of edge objects to be traversed for fulfilling the order. One node is enough for a valid order. Leave edge list empty for that case.",
+            "items": {
+                "$ref": "#/definitions/edge"
+            }
+        }
+    },
+    "definitions": {
+		"node": {
+			"type": "object",
+			"title": "node",
+			"required": [
+				"nodeId",
+				"sequenceId",
+				"released",
+				"actions"
+			],
+			"properties": {
+				"nodeId": {
+					"type": "string",
+					"description": "Identifier of the node. May not be unique among the nodes of the same order.",
+					"examples": [
+						"pumpenhaus_1",
+						"MONTAGE"
+					]
+				},
+				"sequenceId": {
+					"type": "integer",
+					"minimum": 0,
+					"description": "Number to track the sequence of nodes and edges in an order and to simplify order updates. The main purpose is to distinguish between a node which is passed more than once within one orderId. The sequenceId is shared between nodes and edges and defines the sequence of traversal."
+				},
+				"nodeDescriptor": {
+					"type": "string",
+					"description": "Additional information on the node."
+				},
+				"released": {
+					"type": "boolean",
+					"description": "True indicates that the node is part of the base. False indicates that the node is part of the horizon."
+				},
+				"nodePosition": {
+					"description": "Defines the position on a map in a global project-specific world coordinate system. Each floor has its own map. All maps must use the same project specific global origin. Optional for mobile robot-types that do not require the node position (e.g., line-guided mobile robots).",
+					"type": "object",
+					"required": [
+						"x",
+						"y",
+						"mapId"
+					],
+					"properties": {
+						"x": {
+							"type": "number",
+							"description": "X-position on the map in reference to the map coordinate system. Precision is up to the specific implementation.",
+							"unit": "m"
+						},
+						"y": {
+							"type": "number",
+							"description":"Y-position on the map in reference to the map coordinate system. Precision is up to the specific implementation.",
+							"unit": "m"
+						},
+						"theta": {
+							"type": "number",
+							"description": "Absolute orientation of the mobile robot on the node. Optional: mobile robot can plan the path by itself. If defined, the mobile robot has to assume the theta angle on this node. If previous edge disallows rotation, the mobile robot must rotate on the node. If following edge has a differing orientation defined but disallows rotation, the mobile robot is to rotate on the node to the edges desired rotation before entering the edge.",
+							"unit": "m",
+							"minimum": -3.14159265359,
+							"maximum": 3.14159265359
+						},
+						"allowedDeviationXY":{
+						  "type": "object",
+						  "description": "Indicates how precisely a mobile robot shall match the position of a node for it to be considered traversed. If a = b= 0.0: no deviation is allowed, which means the mobile robot shall reach or pass the node position with the mobile robot control point as precisely as is technically possible for the mobile robot. This applies also if allowedDeviationXY is smaller than what is technically viable for the mobile robot. If the mobile robot supports this attribute, but it is not defined for this node by fleet control the mobile robot shall assume the value of a and b as 0.0. The coordinates of the node defines the center of the ellipse.",
+						  "required": [
+							"a",
+							"b",
+							"theta"
+						  ],
+						  "properties": {
+							"a": {
+							  "type": "number",
+							  "description": "Length of the ellipse semi-major axis in meters",
+							  "unit": "m",
+							  "minimum": 0
+							},
+							"b": {
+							  "type": "number",
+							  "description": "Length of the ellipse semi-minor axis in meters",
+							  "unit": "m",
+							  "minimum": 0
+							},
+							"theta": {
+							  "type": "number",
+							  "description": "Rotation angle in radians",
+							  "unit": "rad",
+							  "minimum": -1.570796327,
+							  "maximum": 1.570796327
+							}
+						  }
+						},
+						"allowedDeviationTheta": {
+							"type": "number",
+							"description": "Indicates how big the deviation of theta angle can be. The lowest acceptable angle is theta - allowedDeviationTheta and the highest acceptable angle is theta + allowedDeviationTheta.",
+							"unit": "rad",
+							"minimum": 0,
+							"maximum": 3.141592654
+							},
+						"mapId": {
+							"description": "Unique identification of the map in which the position is referenced.",
+							"type": "string"
+						}
+					}
+				},
+				"actions": {
+					"description": "Array of actions to be executed on a node. Empty array, if no actions required.",
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/action"
+					}
+				}
+			}
+		},
+		"edge": {
+			"type": "object",
+			"title": "edge",
+			"required": [
+				"edgeId",
+				"sequenceId",
+				"released",
+				"actions"
+			],
+			"properties": {
+				"edgeId": {
+					"type": "string",
+					"description": "Identifier of the edge. May not be unique among the edges of the same order."
+				},
+				"sequenceId": {
+					"type": "integer",
+					"minimum": 0,
+					"description": "Number to track the sequence of nodes and edges in an order and to simplify order updates. The sequenceId is shared between nodes and edges and defines the sequence of traversal."
+				},
+				"edgeDescriptor": {
+					"type": "string",
+					"description": "Additional information on the edge."
+				},
+				"released": {
+					"type": "boolean",
+					"description": "True indicates that the edge is part of the base. False indicates that the edge is part of the horizon."
+				},
+				"maximumSpeed": {
+					"type": "number",
+					"description": "Permitted maximum speed on the edge in m/s. Speed is defined by the fastest measurement of the mobile robot.",
+					"unit": "m/s"
+				},
+				"maximumMobileRobotHeight": {
+					"type": "number",
+					"description": "Permitted maximum height of the mobile robot, including the load, on edge in meters.",
+					"unit": "m"
+				},
+				"minimumLoadHandlingDeviceHeight": {
+					"type": "number",
+					"description": "Permitted minimal height of the load handling device on the edge in meters",
+					"unit": "m"
+				},
+				"orientation": {
+					"type": "number",
+					"description": "Orientation of the mobile robot on the edge. The value orientationType defines if it has to be interpreted relative to the global project specific map coordinate system or tangential to the edge. In case of interpreted tangential to the edge 0.0 = forwards and PI = backwards. Example: orientation Pi/2 rad will lead to a rotation of 90 degrees. If mobile robot starts in different orientation, rotate the mobile robot on the edge to the desired orientation if rotationAllowed is set to True. If rotationAllowed is False, rotate before entering the edge. If that is not possible, reject the order. If no trajectory is defined, apply the rotation to the direct path between the two connecting nodes of the edge. If a trajectory is defined for the edge, apply the orientation to the trajectory.",
+					"unit": "rad",
+					"minimum": -3.14159265359,
+					"maximum": 3.14159265359
+				},
+				"orientationType":{
+					"type": "string",
+					"description": "Enum {GLOBAL, TANGENTIAL}: GLOBAL: relative to the global project specific map coordinate system; TANGENTIAL: tangential to the edge. If not defined, the default value is TANGENTIAL."
+				},
+				"direction": {
+					"type": "string",
+					"description": "Sets direction at junctions for line-guided or wire-guided mobile robots, to be defined initially (mobile robot-individual)."
+				},
+				"reachOrientationBeforeEntering": {
+					"type": "boolean",
+					"description": "True: Desired edge orientation shall be reached before entering the edge. False: Mobile robot can rotate into the desired orientation on the edge. Default: False."
+				},
+				"maxRotationSpeed": {
+					"type": "number",
+					"description": "Maximum rotation speed in rad/s. Optional: No limit, if not set.",
+					"unit": "rad/s"
+				},
+				"trajectory": {
+					"description": "Trajectory JSON-object for this edge as a NURBS. Defines the curve, on which the mobile robot should move between the start node and the end node. Optional: Can be omitted, if mobile robot cannot process trajectories or if mobile robot plans its own trajectory.",
+					"$ref": "#/definitions/trajectory"
+				},
+				"length": {
+					"type": "number",
+					"description": "Distance of the path from the start node to the end node in meters. Optional: This value is used by line-guided mobile robots to decrease their speed before reaching a stop position.",
+					"unit": "m"
+				},
+				"corridor": {
+					"$ref": "#/definitions/corridor"
+				},
+				"actions": {
+					"description": "Array of action objects with detailed information.",
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/action"
+					}
+				}
+			}
+		},
+		"trajectory": {
+			"type": "object",
+			"required": [
+				"controlPoints"
+			],
+			"properties": {
+				"degree": {
+					"type": "integer",
+					"description": "Degree of the NURBS curve defining the trajectory. If not defined, the default value is 1.",
+					"minimum": 1
+				},
+				"knotVector": {
+					"type": "array",
+					"description": "Sequence of parameter values that determines where and how the control points affect the NURBS curve.",
+					"items": {
+						"type": "number",
+						"minimum": 0.0,
+						"maximum": 1.0
+					}
+				},
+				"controlPoints": {
+					"type": "array",
+					"description": "List of JSON controlPoint objects defining the control points of the NURBS, which includes the beginning and end point.",
+					"items": {
+						"type": "object",
+						"title": "controlPoint",
+						"required": [
+							"x",
+							"y"
+						],
+						"properties": {
+							"x": {
+								"type": "number",
+								"description": "X coordinate described in the world coordinate system.",
+								"unit": "m"
+							},
+							"y": {
+								"type": "number",
+								"description": "Y coordinate described in the world coordinate system.",
+								"unit": "m"
+							},
+							"weight": {
+								"type": "number",
+								"description": "The weight, with which this control point pulls on the curve. When not defined, the default will be 1.0.",
+							}
+						}
+					}
+				}
+			}
+		},
+        "action": {
+            "type": "object",
+            "description": "Describes an action that the mobile robot can perform.",
+            "required": [
+                "actionId",
+                "actionType",
+                "blockingType"
+            ],
+            "properties": {
+                "actionType": {
+                    "type": "string",
+                    "description": "Name of the action. Identifies the function of the action."
+                },
+                "actionId": {
+                    "type": "string",
+                    "description": "Unique ID to identify the action and map them to the actionState in the state. Suggestion: Use UUIDs."
+                },
+                "actionDescriptor": {
+                    "type": "string",
+                    "description": "Additional information on the action."
+                },
+                "blockingType": {
+                    "type": "string",
+                    "description": "Regulates if the action is allowed to be executed during movement and/or parallel to other actions. NONE: allows driving and other actions; SINGLE: allows driving but no other actions; SOFT: allows other actions but not driving; HARD: is the only allowed action at that time.",
+                    "enum": [
+                        "NONE",
+                        "SOFT",
+                        "SINGLE",
+                        "HARD"
+                    ]
+                },
+                "actionParameters": {
+                    "type": "array",
+                    "description": "Action parameters for the indicated action, e.g., deviceId, loadId, external Triggers.",
+                    "items": {
+                        "title": "actionParameter",
+                        "type": "object",
+                        "required": [
+                            "key",
+                            "value"
+                        ],
+                        "properties": {
+                            "key": {
+                                "type": "string",
+                                "description": "The key of the action parameter.",
+                                "examples": [
+                                    "duration",
+                                    "direction",
+                                    "signal"
+                                ]
+                            },
+                            "value": {
+                                "type": [
+                                    "array",
+                                    "boolean",
+                                    "number",
+                                    "integer",
+                                    "string", 
+                                    "object"
+                                ],
+                                "description": "The value of the action parameter",
+                                "examples": [
+                                    103.2,
+                                    "left",
+                                    true,
+                                    [
+                                        "arrays",
+                                        "are",
+                                        "also",
+                                        "valid"
+                                    ],
+                                    {
+                                        "objects": "as",
+                                        "well": true
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "retriable": {
+                    "type": "boolean",
+                    "description": "True: action can enter RETRIABLE state if it fails. False: action enters FAILED state directly after it fails. Default: false."
+                }
+            }
+        },
+		"corridor": {
+			"description": "Definition of boundaries in which a mobile robot can deviate from its trajectory, e. g. to avoid obstacles.",
+			"type": "object",
+			"required": [
+				"leftWidth",
+				"rightWidth"
+			],
+			"properties": {
+				"leftWidth": {
+					"type": "number",
+					"description": "Defines the width of the corridor in meters to the left related to the trajectory of the mobile robot.",
+					"unit": "m",
+					"minimum": 0.0
+				},
+				"rightWidth": {
+					"type": "number",
+					"description":"Defines the width of the corridor in meters to the right related to the trajectory of the mobile robot.",
+					"unit": "m",
+					"minimum": 0.0
+				},
+				"corridorReferencePoint": {
+					"type": "string",
+					"description": "Defines whether the boundaries are valid for the kinematic center or the contour of the mobile robot.",
+					"enum": [
+						"KINEMATIC_CENTER",
+						"CONTOUR"
+					]
+				},
+				"releaseRequired": {
+					"type": "boolean",
+					"description": "Optional flag that indicates if the robot must request approval from the fleet control. If not defined, no release is required."
+				},
+				"releaseLossBehavior": {
+					"type": "string",
+					"description": "Defines how the robot shall behave in case its release of a corridor expires or gets revoked by the fleet control. Default: STOP",
+					"enum": [
+						"STOP", 
+						"RETURN"
+					]
+				}
+			}
+		}
+    }
+}
