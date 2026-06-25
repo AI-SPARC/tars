@@ -17,6 +17,7 @@ dependencies = [
   "orjson>=3.10.0",
   "structlog>=24.4.0",
   "python-dotenv>=1.0.0",
+  "aiosqlite>=0.22.1",
 ]
 
 [dependency-groups]
