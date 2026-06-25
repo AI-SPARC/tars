@@ -3,6 +3,12 @@ export type NavigationItem = {
   path: string;
 };
 
+export type BrandAttribution = {
+  label: string;
+  group: string;
+  logoAlt: string;
+};
+
 export function getNavigationItems(): NavigationItem[] {
   return [
     { label: 'Dashboard', path: '/' },
@@ -13,4 +19,12 @@ export function getNavigationItems(): NavigationItem[] {
     { label: 'MQTT / VDA Logs', path: '/mqtt' },
     { label: 'Settings', path: '/settings' },
   ];
+}
+
+export function getBrandAttribution(): BrandAttribution {
+  return {
+    label: 'Developed by',
+    group: 'AI-SPARC',
+    logoAlt: 'AI-SPARC logo',
+  };
 }
