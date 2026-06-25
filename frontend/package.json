@@ -10,20 +10,26 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@radix-ui/react-slot": "^1.3.0",
+    "@tanstack/react-query": "latest",
     "@vitejs/plugin-react": "latest",
-    "vite": "latest",
-    "typescript": "latest",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "@tanstack/react-query": "latest",
-    "lucide-react": "latest"
+    "tailwind-merge": "^3.6.0",
+    "typescript": "latest",
+    "vite": "latest"
   },
   "devDependencies": {
-    "vitest": "latest",
-    "jsdom": "latest",
-    "@testing-library/react": "latest",
+    "@tailwindcss/vite": "^4.3.1",
     "@testing-library/jest-dom": "latest",
+    "@testing-library/react": "latest",
     "@types/react": "latest",
-    "@types/react-dom": "latest"
+    "@types/react-dom": "latest",
+    "jsdom": "latest",
+    "tailwindcss": "^4.3.1",
+    "vitest": "latest"
   }
 }
