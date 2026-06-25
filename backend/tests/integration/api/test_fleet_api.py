@@ -1,14 +1,24 @@
+from collections.abc import AsyncIterator
+from dataclasses import dataclass
+
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.api.deps import get_session
 from app.db.base import Base
 from app.main import app
+from app.services.robot_registry import RobotRegistryService
+
+
+@dataclass(frozen=True)
+class ApiTestContext:
+    client: AsyncClient
+    maker: async_sessionmaker[AsyncSession]
 
 
 @pytest.fixture
-async def client() -> AsyncClient:
+async def context() -> AsyncIterator[ApiTestContext]:
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -20,13 +30,13 @@ async def client() -> AsyncClient:
 
     app.dependency_overrides[get_session] = override_session
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as test_client:
-        yield test_client
+        yield ApiTestContext(client=test_client, maker=maker)
     app.dependency_overrides.clear()
     await engine.dispose()
 
 
-async def test_create_and_list_robots(client: AsyncClient) -> None:
-    create_response = await client.post(
+async def test_create_and_list_robots(context: ApiTestContext) -> None:
+    create_response = await context.client.post(
         "/api/v1/robots",
         json={"manufacturer": "ResearchBot", "serialNumber": "RB001", "displayName": "Lab robot"},
     )
@@ -34,26 +44,68 @@ async def test_create_and_list_robots(client: AsyncClient) -> None:
     assert create_response.status_code == 201
     assert create_response.json()["serialNumber"] == "RB001"
 
-    list_response = await client.get("/api/v1/robots")
+    list_response = await context.client.get("/api/v1/robots")
 
     assert list_response.status_code == 200
     assert list_response.json()[0]["manufacturer"] == "ResearchBot"
 
 
-async def test_create_map_with_nodes_and_route_preview(client: AsyncClient) -> None:
-    map_response = await client.post("/api/v1/maps", json={"name": "Lab"})
+async def test_get_robot_detail_latest_state_and_factsheet(context: ApiTestContext) -> None:
+    create_response = await context.client.post(
+        "/api/v1/robots",
+        json={"manufacturer": "ResearchBot", "serialNumber": "RB010", "displayName": "Robot 10"},
+    )
+    robot_id = create_response.json()["id"]
+
+    async with context.maker() as session:
+        service = RobotRegistryService(session)
+        await service.update_factsheet(robot_id, {"typeSpecification": {"seriesName": "RB"}})
+        await service.save_state_snapshot(
+            robot_id,
+            {
+                "headerId": 99,
+                "orderId": "order-99",
+                "orderUpdateId": 1,
+                "lastNodeId": "B",
+                "lastNodeSequenceId": 2,
+                "batteryState": {"batteryCharge": 42.0},
+                "operatingMode": "AUTOMATIC",
+                "errors": [],
+                "safetyState": {"eStop": "NONE", "fieldViolation": False},
+                "agvPosition": {"x": 1.0, "y": 2.0, "theta": 0.0, "mapId": "lab"},
+                "nodeStates": [],
+                "edgeStates": [],
+                "actionStates": [],
+            },
+        )
+
+    detail_response = await context.client.get(f"/api/v1/robots/{robot_id}")
+    state_response = await context.client.get(f"/api/v1/robots/{robot_id}/state/latest")
+    factsheet_response = await context.client.get(f"/api/v1/robots/{robot_id}/factsheet")
+
+    assert detail_response.status_code == 200
+    assert detail_response.json()["displayName"] == "Robot 10"
+    assert state_response.status_code == 200
+    assert state_response.json()["batteryCharge"] == 42.0
+    assert state_response.json()["rawPayload"]["lastNodeId"] == "B"
+    assert factsheet_response.status_code == 200
+    assert factsheet_response.json()["typeSpecification"]["seriesName"] == "RB"
+
+
+async def test_create_map_with_nodes_and_route_preview(context: ApiTestContext) -> None:
+    map_response = await context.client.post("/api/v1/maps", json={"name": "Lab"})
     map_id = map_response.json()["id"]
 
-    await client.post(f"/api/v1/maps/{map_id}/nodes", json={"nodeKey": "A", "x": 0, "y": 0})
-    await client.post(f"/api/v1/maps/{map_id}/nodes", json={"nodeKey": "B", "x": 1, "y": 0})
-    edge_response = await client.post(
+    await context.client.post(f"/api/v1/maps/{map_id}/nodes", json={"nodeKey": "A", "x": 0, "y": 0})
+    await context.client.post(f"/api/v1/maps/{map_id}/nodes", json={"nodeKey": "B", "x": 1, "y": 0})
+    edge_response = await context.client.post(
         f"/api/v1/maps/{map_id}/edges",
         json={"edgeKey": "A-B", "fromNodeKey": "A", "toNodeKey": "B", "distance": 1.0},
     )
 
     assert edge_response.status_code == 201
 
-    route_response = await client.post(
+    route_response = await context.client.post(
         f"/api/v1/maps/{map_id}/route-preview", json={"startNodeKey": "A", "goalNodeKey": "B"}
     )
 
@@ -61,12 +113,12 @@ async def test_create_map_with_nodes_and_route_preview(client: AsyncClient) -> N
     assert route_response.json()["nodeKeys"] == ["A", "B"]
 
 
-async def test_create_mission(client: AsyncClient) -> None:
-    robot_response = await client.post(
+async def test_create_mission(context: ApiTestContext) -> None:
+    robot_response = await context.client.post(
         "/api/v1/robots", json={"manufacturer": "ResearchBot", "serialNumber": "RB003"}
     )
 
-    mission_response = await client.post(
+    mission_response = await context.client.post(
         "/api/v1/missions",
         json={
             "assignedRobotId": robot_response.json()["id"],

@@ -12,7 +12,27 @@ class RobotRead(BaseModel):
     manufacturer: str
     serial_number: str = Field(serialization_alias="serialNumber")
     display_name: str | None = Field(serialization_alias="displayName")
+    protocol_version: str = Field(serialization_alias="protocolVersion")
     last_connection_state: str = Field(serialization_alias="lastConnectionState")
+
+
+class RobotStateRead(BaseModel):
+    id: str
+    robot_id: str = Field(serialization_alias="robotId")
+    header_id: int | None = Field(serialization_alias="headerId")
+    order_id: str | None = Field(serialization_alias="orderId")
+    order_update_id: int | None = Field(serialization_alias="orderUpdateId")
+    last_node_id: str | None = Field(serialization_alias="lastNodeId")
+    last_node_sequence_id: int | None = Field(serialization_alias="lastNodeSequenceId")
+    battery_charge: float | None = Field(serialization_alias="batteryCharge")
+    operating_mode: str | None = Field(serialization_alias="operatingMode")
+    errors: list[dict] | None
+    safety_state: dict | None = Field(serialization_alias="safetyState")
+    agv_position: dict | None = Field(serialization_alias="agvPosition")
+    node_states: list[dict] | None = Field(serialization_alias="nodeStates")
+    edge_states: list[dict] | None = Field(serialization_alias="edgeStates")
+    action_states: list[dict] | None = Field(serialization_alias="actionStates")
+    raw_payload: dict = Field(serialization_alias="rawPayload")
 
 
 class MapCreate(BaseModel):
