@@ -18,11 +18,27 @@ npm test -- --run
 npm run build
 ```
 
+## Robot simulator
+
+```bash
+cd clients/python-simulator
+uv sync --dev
+uv run pytest -q
+uv run ruff check .
+uv run tars-robot-sim --mqtt-host localhost --serial-number RB-SIM-001 --once
+```
+
 ## Docker
 
 ```bash
 docker compose config
 docker compose up --build
+```
+
+Optional simulator profile:
+
+```bash
+docker compose --profile simulator up --build robot-simulator
 ```
 
 ## Database migrations
@@ -48,6 +64,13 @@ docker compose exec mosquitto mosquitto_pub \
   -t 'vda5050/v3/ResearchBot/RB001/connection' \
   -q 1 \
   -m '{"headerId":1,"timestamp":"2026-06-25T13:00:00.000Z","version":"3.0.0","manufacturer":"ResearchBot","serialNumber":"RB001","connectionState":"ONLINE"}'
+```
+
+Or use the simulator client:
+
+```bash
+docker compose --profile simulator run --rm robot-simulator \
+  uv run tars-robot-sim --mqtt-host mosquitto --serial-number RB-SIM-001 --once
 ```
 
 Then check the API:

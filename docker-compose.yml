@@ -59,6 +59,30 @@ services:
     depends_on:
       - backend
 
+  robot-simulator:
+    build:
+      context: ./clients/python-simulator
+    profiles:
+      - simulator
+    environment:
+      MQTT_HOST: mosquitto
+      MQTT_PORT: 1883
+    command:
+      - uv
+      - run
+      - tars-robot-sim
+      - --mqtt-host
+      - mosquitto
+      - --serial-number
+      - RB-SIM-001
+      - --state-interval
+      - "2"
+    depends_on:
+      mosquitto:
+        condition: service_started
+      backend:
+        condition: service_started
+
 volumes:
   postgres-data:
   mosquitto-data:

@@ -27,6 +27,14 @@ Services:
 - MQTT broker: localhost:1883
 - PostgreSQL: localhost:5432
 
+Optional robot simulator:
+
+```bash
+docker compose --profile simulator run --rm robot-simulator uv run tars-robot-sim --mqtt-host mosquitto --serial-number RB-SIM-001 --once
+```
+
+
+
 ## VDA 5050 target
 
 This repository targets VDA 5050 **v3.0.0**.
