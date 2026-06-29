@@ -46,4 +46,17 @@ Currently applied updates:
 - `factsheet`: stores raw factsheet and extracts coarse capability fields.
 - `state`: stores a `robot_state_snapshots` row and updates `last_seen_at`.
 
+## Backend outbound runtime
+
+Assigned missions can be dispatched through the REST API. The backend resolves the mission's
+route on its graph map, validates the generated VDA 5050 `order`, publishes it with QoS 0, and
+stores both a `mission_orders` record and an outbound `mqtt_message_logs` record.
+
+Order `headerId` values are monotonic per robot. A successfully published mission transitions
+from `assigned` to `sent`.
+
+Persisted inbound and outbound messages can be inspected through `GET /api/v1/mqtt/messages`.
+The endpoint supports filters for direction, VDA message type, robot, and schema validity, plus
+bounded pagination.
+
 Invalid topics or invalid payloads are persisted in `mqtt_message_logs` with `schema_valid=false` and `validation_errors`, but they are not applied to robot domain tables.

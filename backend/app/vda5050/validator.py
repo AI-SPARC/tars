@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import jsonschema
 
@@ -37,11 +37,11 @@ def _load_schema(message_type: str) -> dict[str, Any]:
     # JSON-with-comments style trailing commas. Keep the files verbatim for
     # traceability and normalize only while loading.
     normalized_schema = re.sub(r",\s*([}\]])", r"\1", raw_schema)
-    return json.loads(normalized_schema)
+    return cast(dict[str, Any], json.loads(normalized_schema))
 
 
 @lru_cache
-def _validator(message_type: str) -> jsonschema.Draft7Validator:
+def _validator(message_type: str) -> jsonschema.protocols.Validator:
     schema = _load_schema(message_type)
     cls = jsonschema.validators.validator_for(schema)
     cls.check_schema(schema)

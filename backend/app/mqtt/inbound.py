@@ -4,6 +4,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.base import MqttMessageLog
+from app.services.event_bus import EventBus, get_event_bus
 from app.services.robot_registry import RobotRegistryService
 from app.vda5050.topics import TopicParseError, parse_topic
 from app.vda5050.validator import validate_message
@@ -26,9 +27,10 @@ class MqttInboundResult:
 
 
 class MqttInboundService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: AsyncSession, event_bus: EventBus | None = None) -> None:
         self.session = session
-        self.robot_registry = RobotRegistryService(session)
+        self.event_bus = event_bus or get_event_bus()
+        self.robot_registry = RobotRegistryService(session, self.event_bus)
 
     async def handle_message(self, message: InboundMqttMessage) -> MqttInboundResult:
         try:
@@ -99,4 +101,25 @@ class MqttInboundService:
         self.session.add(log)
         await self.session.commit()
         await self.session.refresh(log)
+        self.event_bus.publish(
+            "mqtt.message.received",
+            robot_id=robot_id,
+            payload={
+                "messageId": log.id,
+                "topic": log.topic,
+                "messageType": log.message_type,
+                "schemaValid": log.schema_valid,
+            },
+        )
+        if not schema_valid:
+            self.event_bus.publish(
+                "vda.validation.failed",
+                robot_id=robot_id,
+                payload={
+                    "messageId": log.id,
+                    "topic": log.topic,
+                    "messageType": log.message_type,
+                    "errors": validation_errors,
+                },
+            )
         return log

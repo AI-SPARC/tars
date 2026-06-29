@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from app.api.deps import get_session
 from app.db.base import Base
 from app.main import app
+from app.mqtt.outbound import RecordingMqttPublisher, get_mqtt_publisher
 from app.services.robot_registry import RobotRegistryService
 
 
@@ -15,6 +16,7 @@ from app.services.robot_registry import RobotRegistryService
 class ApiTestContext:
     client: AsyncClient
     maker: async_sessionmaker[AsyncSession]
+    publisher: RecordingMqttPublisher
 
 
 @pytest.fixture
@@ -24,13 +26,19 @@ async def context() -> AsyncIterator[ApiTestContext]:
         await conn.run_sync(Base.metadata.create_all)
     maker = async_sessionmaker(engine, expire_on_commit=False)
 
+    publisher = RecordingMqttPublisher()
+
     async def override_session():
         async with maker() as session:
             yield session
 
+    def override_publisher() -> RecordingMqttPublisher:
+        return publisher
+
     app.dependency_overrides[get_session] = override_session
+    app.dependency_overrides[get_mqtt_publisher] = override_publisher
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as test_client:
-        yield ApiTestContext(client=test_client, maker=maker)
+        yield ApiTestContext(client=test_client, maker=maker, publisher=publisher)
     app.dependency_overrides.clear()
     await engine.dispose()
 
@@ -117,10 +125,19 @@ async def test_create_mission(context: ApiTestContext) -> None:
     robot_response = await context.client.post(
         "/api/v1/robots", json={"manufacturer": "ResearchBot", "serialNumber": "RB003"}
     )
+    map_response = await context.client.post("/api/v1/maps", json={"name": "Mission map"})
+    map_id = map_response.json()["id"]
+    await context.client.post(
+        f"/api/v1/maps/{map_id}/nodes", json={"nodeKey": "A", "x": 0, "y": 0}
+    )
+    await context.client.post(
+        f"/api/v1/maps/{map_id}/nodes", json={"nodeKey": "B", "x": 1, "y": 0}
+    )
 
     mission_response = await context.client.post(
         "/api/v1/missions",
         json={
+            "mapId": map_id,
             "assignedRobotId": robot_response.json()["id"],
             "startNodeKey": "A",
             "goalNodeKey": "B",
@@ -128,4 +145,51 @@ async def test_create_mission(context: ApiTestContext) -> None:
     )
 
     assert mission_response.status_code == 201
-    assert mission_response.json()["status"] == "queued"
+    assert mission_response.json()["status"] == "assigned"
+    assert mission_response.json()["mapId"] == map_id
+
+
+async def test_dispatch_mission_publishes_order(context: ApiTestContext) -> None:
+    robot_response = await context.client.post(
+        "/api/v1/robots", json={"manufacturer": "ResearchBot", "serialNumber": "RB004"}
+    )
+    map_response = await context.client.post("/api/v1/maps", json={"name": "Dispatch map"})
+    map_id = map_response.json()["id"]
+    await context.client.post(
+        f"/api/v1/maps/{map_id}/nodes", json={"nodeKey": "Dock", "x": 2, "y": 3}
+    )
+    await context.client.post(
+        f"/api/v1/maps/{map_id}/nodes", json={"nodeKey": "Shelf", "x": 8, "y": 5}
+    )
+    await context.client.post(
+        f"/api/v1/maps/{map_id}/edges",
+        json={
+            "edgeKey": "Dock-Shelf",
+            "fromNodeKey": "Dock",
+            "toNodeKey": "Shelf",
+            "distance": 6.3,
+        },
+    )
+    mission_response = await context.client.post(
+        "/api/v1/missions",
+        json={
+            "mapId": map_id,
+            "assignedRobotId": robot_response.json()["id"],
+            "startNodeKey": "Dock",
+            "goalNodeKey": "Shelf",
+        },
+    )
+
+    dispatch_response = await context.client.post(
+        f"/api/v1/missions/{mission_response.json()['id']}/dispatch"
+    )
+
+    assert dispatch_response.status_code == 202
+    body = dispatch_response.json()
+    assert body["accepted"] is True
+    assert body["topic"] == "vda5050/v3/ResearchBot/RB004/order"
+    assert body["payload"]["orderId"] == mission_response.json()["id"]
+    assert body["payload"]["nodes"][0]["nodePosition"]["x"] == 2
+    assert body["payload"]["nodes"][1]["nodePosition"]["x"] == 8
+    assert len(context.publisher.publications) == 1
+    assert context.publisher.publications[0].topic == "vda5050/v3/ResearchBot/RB004/order"

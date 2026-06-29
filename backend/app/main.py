@@ -5,8 +5,10 @@ from fastapi import FastAPI
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
+from app.mqtt.asyncio_compat import configure_windows_selector_event_loop_policy
 from app.mqtt.worker import MqttWorker
 
+configure_windows_selector_event_loop_policy()
 settings = get_settings()
 
 

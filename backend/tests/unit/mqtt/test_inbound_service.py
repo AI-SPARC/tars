@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.db.base import Base, MqttMessageLog, Robot, RobotStateSnapshot
 from app.mqtt.inbound import InboundMqttMessage, MqttInboundService
+from app.services.event_bus import EventBus
 
 
 @pytest.fixture
@@ -54,16 +55,18 @@ def state_payload() -> dict:
 async def test_connection_message_creates_robot_updates_state_and_logs_message(
     session: AsyncSession,
 ) -> None:
-    service = MqttInboundService(session)
+    event_bus = EventBus()
 
-    result = await service.handle_message(
-        InboundMqttMessage(
-            topic="vda5050/v3/ResearchBot/RB100/connection",
-            payload=connection_payload(),
-            qos=1,
-            retain=True,
+    async with event_bus.subscribe() as events:
+        result = await MqttInboundService(session, event_bus).handle_message(
+            InboundMqttMessage(
+                topic="vda5050/v3/ResearchBot/RB100/connection",
+                payload=connection_payload(),
+                qos=1,
+                retain=True,
+            )
         )
-    )
+        emitted_types = [(await events.get()).type for _ in range(3)]
 
     robot = (await session.execute(select(Robot))).scalar_one()
     log = (await session.execute(select(MqttMessageLog))).scalar_one()
@@ -76,6 +79,11 @@ async def test_connection_message_creates_robot_updates_state_and_logs_message(
     assert log.schema_valid is True
     assert log.validation_errors == []
     assert log.qos == 1
+    assert emitted_types == [
+        "robot.discovered",
+        "robot.connection.updated",
+        "mqtt.message.received",
+    ]
 
 
 async def test_state_message_persists_latest_snapshot_and_soc(session: AsyncSession) -> None:
@@ -94,15 +102,17 @@ async def test_state_message_persists_latest_snapshot_and_soc(session: AsyncSess
 
 
 async def test_invalid_vda_payload_is_logged_but_not_applied(session: AsyncSession) -> None:
-    service = MqttInboundService(session)
+    event_bus = EventBus()
 
-    result = await service.handle_message(
-        InboundMqttMessage(
-            topic="vda5050/v3/ResearchBot/RB100/connection",
-            payload={"headerId": 1},
-            qos=1,
+    async with event_bus.subscribe() as events:
+        result = await MqttInboundService(session, event_bus).handle_message(
+            InboundMqttMessage(
+                topic="vda5050/v3/ResearchBot/RB100/connection",
+                payload={"headerId": 1},
+                qos=1,
+            )
         )
-    )
+        emitted_types = [(await events.get()).type for _ in range(2)]
 
     robots = (await session.execute(select(Robot))).scalars().all()
     log = (await session.execute(select(MqttMessageLog))).scalar_one()
@@ -111,6 +121,7 @@ async def test_invalid_vda_payload_is_logged_but_not_applied(session: AsyncSessi
     assert robots == []
     assert log.schema_valid is False
     assert log.validation_errors
+    assert emitted_types == ["mqtt.message.received", "vda.validation.failed"]
 
 
 async def test_invalid_topic_is_logged_without_robot(session: AsyncSession) -> None:

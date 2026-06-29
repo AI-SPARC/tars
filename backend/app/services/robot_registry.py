@@ -5,11 +5,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.base import Robot, RobotStateSnapshot
+from app.services.event_bus import EventBus, get_event_bus
 
 
 class RobotRegistryService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: AsyncSession, event_bus: EventBus | None = None) -> None:
         self.session = session
+        self.event_bus = event_bus or get_event_bus()
 
     async def get_or_create(
         self, manufacturer: str, serial_number: str, display_name: str | None = None
@@ -36,12 +38,25 @@ class RobotRegistryService:
         self.session.add(robot)
         await self.session.commit()
         await self.session.refresh(robot)
+        self.event_bus.publish(
+            "robot.discovered",
+            robot_id=robot.id,
+            payload={
+                "manufacturer": robot.manufacturer,
+                "serialNumber": robot.serial_number,
+            },
+        )
         return robot
 
     async def update_connection_state(self, robot_id: str, state: str) -> Robot:
         robot = await self._get_robot_or_raise(robot_id)
         robot.last_connection_state = state
         await self._touch_and_commit(robot)
+        self.event_bus.publish(
+            "robot.connection.updated",
+            robot_id=robot.id,
+            payload={"connectionState": state},
+        )
         return robot
 
     async def update_factsheet(self, robot_id: str, factsheet: dict[str, Any]) -> Robot:
@@ -49,6 +64,9 @@ class RobotRegistryService:
         robot.factsheet = factsheet
         robot.capabilities = self._extract_capabilities(factsheet)
         await self._touch_and_commit(robot)
+        self.event_bus.publish(
+            "robot.factsheet.updated", robot_id=robot.id, payload=factsheet
+        )
         return robot
 
     async def save_state_snapshot(
@@ -78,6 +96,7 @@ class RobotRegistryService:
         self.session.add(snapshot)
         await self.session.commit()
         await self.session.refresh(snapshot)
+        self.event_bus.publish("robot.state.updated", robot_id=robot.id, payload=payload)
         return snapshot
 
     async def get_latest_state(self, robot_id: str) -> RobotStateSnapshot | None:

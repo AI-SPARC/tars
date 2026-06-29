@@ -3,7 +3,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 
-from app.api.deps import SessionDep
+from app.api.deps import EventBusDep, SessionDep
 from app.api.v1.schemas import RobotCreate, RobotRead, RobotStateRead
 from app.db.base import Robot, RobotStateSnapshot
 from app.services.robot_registry import RobotRegistryService
@@ -18,8 +18,8 @@ async def list_robots(session: SessionDep) -> list[Robot]:
 
 
 @router.post("", response_model=RobotRead, status_code=status.HTTP_201_CREATED)
-async def create_robot(payload: RobotCreate, session: SessionDep) -> Robot:
-    return await RobotRegistryService(session).get_or_create(
+async def create_robot(payload: RobotCreate, session: SessionDep, event_bus: EventBusDep) -> Robot:
+    return await RobotRegistryService(session, event_bus).get_or_create(
         payload.manufacturer, payload.serial_number, payload.display_name
     )
 

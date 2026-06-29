@@ -8,3 +8,10 @@ TARS is a monorepo with four main runtime components:
 4. **Mosquitto** — MQTT broker for VDA 5050 topics.
 
 The backend acts as the VDA 5050 **fleet control**. It publishes `order`, `instantActions`, `zoneSet`, and `responses`, and consumes `state`, `connection`, `factsheet`, and `visualization`.
+
+## Runtime events
+
+Backend domain services publish process-local events after database commits. Web clients consume
+them through `/api/v1/events/ws`. Subscriber queues are isolated and bounded so a slow dashboard
+does not apply backpressure to MQTT ingestion or mission dispatch. A distributed event backend is
+outside the MVP scope and will be needed before running multiple backend replicas.

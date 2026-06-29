@@ -1,4 +1,7 @@
-from pydantic import BaseModel, Field
+from datetime import datetime
+from typing import Any, Literal
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class RobotCreate(BaseModel):
@@ -26,13 +29,13 @@ class RobotStateRead(BaseModel):
     last_node_sequence_id: int | None = Field(serialization_alias="lastNodeSequenceId")
     battery_charge: float | None = Field(serialization_alias="batteryCharge")
     operating_mode: str | None = Field(serialization_alias="operatingMode")
-    errors: list[dict] | None
-    safety_state: dict | None = Field(serialization_alias="safetyState")
-    agv_position: dict | None = Field(serialization_alias="agvPosition")
-    node_states: list[dict] | None = Field(serialization_alias="nodeStates")
-    edge_states: list[dict] | None = Field(serialization_alias="edgeStates")
-    action_states: list[dict] | None = Field(serialization_alias="actionStates")
-    raw_payload: dict = Field(serialization_alias="rawPayload")
+    errors: list[dict[str, Any]] | None
+    safety_state: dict[str, Any] | None = Field(serialization_alias="safetyState")
+    agv_position: dict[str, Any] | None = Field(serialization_alias="agvPosition")
+    node_states: list[dict[str, Any]] | None = Field(serialization_alias="nodeStates")
+    edge_states: list[dict[str, Any]] | None = Field(serialization_alias="edgeStates")
+    action_states: list[dict[str, Any]] | None = Field(serialization_alias="actionStates")
+    raw_payload: dict[str, Any] = Field(serialization_alias="rawPayload")
 
 
 class MapCreate(BaseModel):
@@ -71,6 +74,7 @@ class RoutePreviewRead(BaseModel):
 
 
 class MissionCreate(BaseModel):
+    map_id: str = Field(alias="mapId")
     assigned_robot_id: str | None = Field(default=None, alias="assignedRobotId")
     start_node_key: str = Field(alias="startNodeKey")
     goal_node_key: str = Field(alias="goalNodeKey")
@@ -79,8 +83,42 @@ class MissionCreate(BaseModel):
 
 class MissionRead(BaseModel):
     id: str
+    map_id: str | None = Field(serialization_alias="mapId")
     assigned_robot_id: str | None = Field(serialization_alias="assignedRobotId")
     start_node_key: str = Field(serialization_alias="startNodeKey")
     goal_node_key: str = Field(serialization_alias="goalNodeKey")
     status: str
     priority: int
+
+
+class MissionDispatchRead(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    accepted: bool
+    topic: str
+    payload: dict[str, Any]
+    errors: list[str]
+
+
+class MqttMessageRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    direction: Literal["inbound", "outbound"]
+    topic: str
+    qos: int
+    retain: bool
+    robot_id: str | None = Field(serialization_alias="robotId")
+    message_type: str = Field(serialization_alias="messageType")
+    payload: dict[str, Any]
+    schema_valid: bool = Field(serialization_alias="schemaValid")
+    validation_errors: list[str] = Field(serialization_alias="validationErrors")
+    created_at: datetime = Field(serialization_alias="createdAt")
+
+
+class MqttMessagePage(BaseModel):
+    items: list[MqttMessageRead]
+    page: int
+    page_size: int = Field(serialization_alias="pageSize")
+    total: int
+    pages: int

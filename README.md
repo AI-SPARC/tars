@@ -67,4 +67,7 @@ See:
 
 ## Status
 
-Early rewrite in progress. The initial deliverable is a Dockerized MVP foundation with VDA 5050 schema validation and MQTT-ready architecture.
+MVP rewrite in progress. Robot discovery and telemetry ingestion, graph maps and routing, mission
+creation, VDA 5050 order dispatch, persistence, MQTT log inspection, real-time WebSocket events,
+and a basic simulator are implemented. The operator frontend and full Docker broker E2E remain
+in progress.
