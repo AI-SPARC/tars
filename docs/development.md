@@ -18,6 +18,15 @@ npm test -- --run
 npm run build
 ```
 
+The frontend reads these optional environment variables:
+
+```text
+VITE_API_BASE_URL=http://localhost:8000/api/v1
+VITE_WS_URL=ws://localhost:8000/api/v1/events/ws
+```
+
+When omitted, the same local URLs are used as defaults. Docker Compose injects them explicitly.
+
 ## Robot simulator
 
 ```bash

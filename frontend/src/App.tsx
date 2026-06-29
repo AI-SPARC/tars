@@ -4,6 +4,7 @@ import aiSparcLogo from './assets/ai-sparc-logo.png';
 import { Badge } from './components/ui/badge';
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
+import { useEvents } from './hooks/useEvents';
 import { getBrandAttribution, getNavigationItems } from './navigation';
 import './styles.css';
 
@@ -28,6 +29,7 @@ const featureCards = [
 ];
 
 export function App() {
+  useEvents();
   const items = getNavigationItems();
   const attribution = getBrandAttribution();
 
