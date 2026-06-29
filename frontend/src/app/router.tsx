@@ -3,6 +3,7 @@ import { createRootRoute, createRoute, createRouter } from '@tanstack/react-rout
 import { App } from '../App';
 import { DashboardPage } from '../pages/DashboardPage';
 import { MapPage } from '../pages/MapPage';
+import { MissionsPage } from '../pages/MissionsPage';
 import { PlaceholderPage } from '../pages/PlaceholderPage';
 import { RobotDetailPage } from '../pages/RobotDetailPage';
 import { RobotsPage } from '../pages/RobotsPage';
@@ -28,9 +29,13 @@ const mapRoute = createRoute({
   path: '/map',
   component: MapPage,
 });
+const missionsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/missions',
+  component: MissionsPage,
+});
 
 const placeholders = [
-  ['/missions', 'Missions'],
   ['/traffic', 'Traffic'],
   ['/mqtt', 'MQTT / VDA Logs'],
   ['/settings', 'Settings'],
@@ -48,6 +53,7 @@ export const routeTree = rootRoute.addChildren([
   robotsRoute,
   robotDetailRoute,
   mapRoute,
+  missionsRoute,
   ...placeholderRoutes,
 ]);
 

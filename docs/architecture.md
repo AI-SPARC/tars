@@ -27,3 +27,7 @@ local backend at `http://localhost:8000/api/v1` and `ws://localhost:8000/api/v1/
 
 The dashboard composes independently cached robot, map, mission, recent MQTT, and invalid-message
 queries. Partial API failures are surfaced without hiding successfully loaded operational data.
+
+The mission workspace uses the same persisted graph for route preview and backend dispatch. The
+operator selects a robot and graph endpoints, creates an assigned mission, then receives the exact
+validated VDA 5050 order payload after MQTT publication.

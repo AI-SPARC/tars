@@ -75,6 +75,21 @@ export type Mission = {
   priority: number;
 };
 
+export type MissionInput = {
+  mapId: string;
+  assignedRobotId: string;
+  startNodeKey: string;
+  goalNodeKey: string;
+  priority: number;
+};
+
+export type MissionDispatchResponse = {
+  accepted: boolean;
+  topic: string;
+  payload: Record<string, unknown>;
+  errors: string[];
+};
+
 export type MqttMessage = {
   id: string;
   direction: 'inbound' | 'outbound';
@@ -189,6 +204,16 @@ export function createApiClient(baseUrl: string) {
         body: JSON.stringify({ startNodeKey, goalNodeKey }),
       }),
     listMissions: () => request<Mission[]>('/missions'),
+    createMission: (input: MissionInput) =>
+      request<Mission>('/missions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    dispatchMission: (missionId: string) =>
+      request<MissionDispatchResponse>(`/missions/${encodeURIComponent(missionId)}/dispatch`, {
+        method: 'POST',
+      }),
     listMqttMessages: (filters: MqttMessageFilters = {}) => {
       const query = new URLSearchParams();
       for (const [key, value] of Object.entries(filters)) {
