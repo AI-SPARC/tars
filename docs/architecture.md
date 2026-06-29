@@ -24,3 +24,6 @@ state directly into its cache entry and invalidates related fleet, mission, and 
 
 Runtime endpoints are configured with `VITE_API_BASE_URL` and `VITE_WS_URL`. Defaults target the
 local backend at `http://localhost:8000/api/v1` and `ws://localhost:8000/api/v1/events/ws`.
+
+The dashboard composes independently cached robot, map, mission, recent MQTT, and invalid-message
+queries. Partial API failures are surfaced without hiding successfully loaded operational data.

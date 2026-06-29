@@ -12,5 +12,6 @@ export const queryKeys = {
   },
   mqtt: {
     all: ['mqtt-messages'] as const,
+    list: (filters: Record<string, unknown>) => ['mqtt-messages', filters] as const,
   },
 };
