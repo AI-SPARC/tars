@@ -8,6 +8,7 @@ export const queryKeys = {
   },
   maps: {
     all: ['maps'] as const,
+    detail: (mapId: string) => ['maps', mapId] as const,
   },
   missions: {
     all: ['missions'] as const,

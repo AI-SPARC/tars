@@ -63,6 +63,29 @@ class MapRead(BaseModel):
     description: str | None
 
 
+class MapNodeRead(BaseModel):
+    id: str
+    node_key: str = Field(serialization_alias="nodeKey")
+    x: float
+    y: float
+    theta: float
+    node_type: str = Field(serialization_alias="nodeType")
+
+
+class MapEdgeRead(BaseModel):
+    id: str
+    edge_key: str = Field(serialization_alias="edgeKey")
+    from_node_key: str = Field(serialization_alias="fromNodeKey")
+    to_node_key: str = Field(serialization_alias="toNodeKey")
+    distance: float
+    bidirectional: bool
+
+
+class MapDetailRead(MapRead):
+    nodes: list[MapNodeRead]
+    edges: list[MapEdgeRead]
+
+
 class NodeCreate(BaseModel):
     node_key: str = Field(alias="nodeKey")
     x: float

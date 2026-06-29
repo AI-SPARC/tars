@@ -5,12 +5,15 @@ from app.api.deps import SessionDep
 from app.api.v1.schemas import (
     EdgeCreate,
     MapCreate,
+    MapDetailRead,
+    MapEdgeRead,
+    MapNodeRead,
     MapRead,
     NodeCreate,
     RoutePreviewRead,
     RoutePreviewRequest,
 )
-from app.db.base import MapLayout
+from app.db.base import MapEdge, MapLayout, MapNode
 from app.services.map_service import MapService
 
 router = APIRouter(prefix="/maps", tags=["maps"])
@@ -25,6 +28,34 @@ async def list_maps(session: SessionDep) -> list[MapLayout]:
 @router.post("", response_model=MapRead, status_code=status.HTTP_201_CREATED)
 async def create_map(payload: MapCreate, session: SessionDep) -> MapLayout:
     return await MapService(session).create_map(payload.name, payload.description)
+
+
+@router.get("/{map_id}", response_model=MapDetailRead)
+async def get_map(map_id: str, session: SessionDep) -> MapDetailRead:
+    layout = await session.get(MapLayout, map_id)
+    if layout is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Map not found")
+    nodes = list(
+        (
+            await session.execute(
+                select(MapNode).where(MapNode.map_id == map_id).order_by(MapNode.node_key)
+            )
+        ).scalars()
+    )
+    edges = list(
+        (
+            await session.execute(
+                select(MapEdge).where(MapEdge.map_id == map_id).order_by(MapEdge.edge_key)
+            )
+        ).scalars()
+    )
+    return MapDetailRead(
+        id=layout.id,
+        name=layout.name,
+        description=layout.description,
+        nodes=[MapNodeRead.model_validate(node, from_attributes=True) for node in nodes],
+        edges=[MapEdgeRead.model_validate(edge, from_attributes=True) for edge in edges],
+    )
 
 
 @router.post("/{map_id}/nodes", status_code=status.HTTP_201_CREATED)

@@ -135,6 +135,18 @@ async def test_create_map_with_nodes_and_route_preview(context: ApiTestContext) 
     assert route_response.status_code == 200
     assert route_response.json()["nodeKeys"] == ["A", "B"]
 
+    detail_response = await context.client.get(f"/api/v1/maps/{map_id}")
+    assert detail_response.status_code == 200
+    assert [node["nodeKey"] for node in detail_response.json()["nodes"]] == ["A", "B"]
+    assert detail_response.json()["edges"][0] == {
+        "id": edge_response.json()["id"],
+        "edgeKey": "A-B",
+        "fromNodeKey": "A",
+        "toNodeKey": "B",
+        "distance": 1.0,
+        "bidirectional": False,
+    }
+
 
 async def test_create_mission(context: ApiTestContext) -> None:
     robot_response = await context.client.post(

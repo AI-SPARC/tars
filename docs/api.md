@@ -92,3 +92,18 @@ Content-Type: application/json
 
 The backend assigns an action ID and a monotonic `headerId` for the robot's `instantActions`
 stream, validates the VDA 5050 payload, publishes it with QoS 0, and persists the outbound log.
+
+## Graph maps
+
+```text
+GET  /api/v1/maps
+POST /api/v1/maps
+GET  /api/v1/maps/{map_id}
+POST /api/v1/maps/{map_id}/nodes
+POST /api/v1/maps/{map_id}/edges
+POST /api/v1/maps/{map_id}/route-preview
+```
+
+Map detail returns the complete node and edge graph used by the operator editor. Nodes carry
+Cartesian position and orientation; edges carry direction, distance, and bidirectional metadata.
+Bulk import/export and external map-format adapters are post-v1 roadmap items.

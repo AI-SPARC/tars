@@ -36,6 +36,35 @@ export type FleetMap = {
   description: string | null;
 };
 
+export type MapNode = {
+  id: string;
+  nodeKey: string;
+  x: number;
+  y: number;
+  theta: number;
+  nodeType: string;
+};
+
+export type MapEdge = {
+  id: string;
+  edgeKey: string;
+  fromNodeKey: string;
+  toNodeKey: string;
+  distance: number;
+  bidirectional: boolean;
+};
+
+export type FleetMapDetail = FleetMap & {
+  nodes: MapNode[];
+  edges: MapEdge[];
+};
+
+export type MapNodeInput = Pick<MapNode, 'nodeKey' | 'x' | 'y' | 'theta'>;
+export type MapEdgeInput = Pick<
+  MapEdge,
+  'edgeKey' | 'fromNodeKey' | 'toNodeKey' | 'distance' | 'bidirectional'
+>;
+
 export type Mission = {
   id: string;
   mapId: string | null;
@@ -134,6 +163,31 @@ export function createApiClient(baseUrl: string) {
         },
       ),
     listMaps: () => request<FleetMap[]>('/maps'),
+    getMap: (mapId: string) => request<FleetMapDetail>(`/maps/${encodeURIComponent(mapId)}`),
+    createMap: (input: { name: string; description?: string }) =>
+      request<FleetMap>('/maps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    addMapNode: (mapId: string, input: MapNodeInput) =>
+      request<{ id: string; nodeKey: string }>(`/maps/${encodeURIComponent(mapId)}/nodes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    addMapEdge: (mapId: string, input: MapEdgeInput) =>
+      request<{ id: string; edgeKey: string }>(`/maps/${encodeURIComponent(mapId)}/edges`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    previewRoute: (mapId: string, startNodeKey: string, goalNodeKey: string) =>
+      request<{ nodeKeys: string[] }>(`/maps/${encodeURIComponent(mapId)}/route-preview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ startNodeKey, goalNodeKey }),
+      }),
     listMissions: () => request<Mission[]>('/missions'),
     listMqttMessages: (filters: MqttMessageFilters = {}) => {
       const query = new URLSearchParams();

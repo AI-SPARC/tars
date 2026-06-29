@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from '../api/client';
 import { queryKeys } from '../api/queryKeys';
@@ -43,5 +43,15 @@ export function useCancelOrder(robotId: string) {
       void queryClient.invalidateQueries({ queryKey: queryKeys.robots.state(robotId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.mqtt.all });
     },
+  });
+}
+
+export function useRobotStates(robotIds: string[]) {
+  return useQueries({
+    queries: robotIds.map((robotId) => ({
+      queryKey: queryKeys.robots.state(robotId),
+      queryFn: () => apiClient.getRobotState(robotId),
+      retry: false,
+    })),
   });
 }
