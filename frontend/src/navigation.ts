@@ -1,6 +1,6 @@
 export type NavigationItem = {
   label: string;
-  path: string;
+  path: '/' | '/robots' | '/map' | '/missions' | '/traffic' | '/mqtt' | '/settings';
 };
 
 export type BrandAttribution = {

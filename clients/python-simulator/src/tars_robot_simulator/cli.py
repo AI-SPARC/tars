@@ -87,6 +87,9 @@ async def consume_commands(client: aiomqtt.Client, robot: SimulatedRobot) -> Non
         if topic.endswith("/order"):
             robot.apply_order(payload)
             await publish(client, robot.state_publication())
+        elif topic.endswith("/instantActions"):
+            robot.apply_instant_actions(payload)
+            await publish(client, robot.state_publication())
 
 
 async def publish(client: aiomqtt.Client, publication: Publication) -> None:

@@ -77,6 +77,13 @@ export type MqttMessageFilters = {
   pageSize?: number;
 };
 
+export type InstantActionResponse = {
+  accepted: boolean;
+  topic: string;
+  payload: Record<string, unknown>;
+  errors: string[];
+};
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -111,8 +118,21 @@ export function createApiClient(baseUrl: string) {
   return {
     getHealth: () => request<Health>('/health'),
     listRobots: () => request<Robot[]>('/robots'),
+    getRobot: (robotId: string) =>
+      request<Robot>(`/robots/${encodeURIComponent(robotId)}`),
     getRobotState: (robotId: string) =>
       request<RobotState>(`/robots/${encodeURIComponent(robotId)}/state/latest`),
+    getRobotFactsheet: (robotId: string) =>
+      request<Record<string, unknown>>(`/robots/${encodeURIComponent(robotId)}/factsheet`),
+    sendInstantAction: (robotId: string, actionType: string) =>
+      request<InstantActionResponse>(
+        `/robots/${encodeURIComponent(robotId)}/instant-actions`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ actionType }),
+        },
+      ),
     listMaps: () => request<FleetMap[]>('/maps'),
     listMissions: () => request<Mission[]>('/missions'),
     listMqttMessages: (filters: MqttMessageFilters = {}) => {

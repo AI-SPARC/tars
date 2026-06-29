@@ -100,6 +100,21 @@ async def test_get_robot_detail_latest_state_and_factsheet(context: ApiTestConte
     assert factsheet_response.json()["typeSpecification"]["seriesName"] == "RB"
 
 
+async def test_send_cancel_order_instant_action(context: ApiTestContext) -> None:
+    robot_response = await context.client.post(
+        "/api/v1/robots", json={"manufacturer": "ResearchBot", "serialNumber": "RB-CANCEL"}
+    )
+
+    response = await context.client.post(
+        f"/api/v1/robots/{robot_response.json()['id']}/instant-actions",
+        json={"actionType": "cancelOrder"},
+    )
+
+    assert response.status_code == 202
+    assert response.json()["payload"]["actions"][0]["actionType"] == "cancelOrder"
+    assert context.publisher.publications[-1].topic.endswith("/instantActions")
+
+
 async def test_create_map_with_nodes_and_route_preview(context: ApiTestContext) -> None:
     map_response = await context.client.post("/api/v1/maps", json={"name": "Lab"})
     map_id = map_response.json()["id"]

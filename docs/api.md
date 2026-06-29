@@ -78,3 +78,17 @@ Implemented event types:
 
 The event bus is process-local for the MVP. Each connection has a bounded buffer; if a client
 cannot keep up, its oldest pending event is discarded without blocking robot or MQTT processing.
+
+## Robot instant actions
+
+```http
+POST /api/v1/robots/{robot_id}/instant-actions
+Content-Type: application/json
+
+{
+  "actionType": "cancelOrder"
+}
+```
+
+The backend assigns an action ID and a monotonic `headerId` for the robot's `instantActions`
+stream, validates the VDA 5050 payload, publishes it with QoS 0, and persists the outbound log.

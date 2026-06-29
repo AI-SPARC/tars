@@ -69,5 +69,5 @@ See:
 
 MVP rewrite in progress. Robot discovery and telemetry ingestion, graph maps and routing, mission
 creation, VDA 5050 order dispatch, persistence, MQTT log inspection, real-time WebSocket events,
-a live operations dashboard, and a basic simulator are implemented. Detailed operator pages and
-the full Docker broker E2E remain in progress.
+a live operations dashboard, fleet/robot detail pages, and a basic simulator are implemented.
+Map, mission, and protocol-log operator pages plus the full Docker broker E2E remain in progress.

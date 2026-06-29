@@ -2,7 +2,9 @@ export const queryKeys = {
   health: ['health'] as const,
   robots: {
     all: ['robots'] as const,
+    detail: (robotId: string) => ['robots', robotId] as const,
     state: (robotId: string) => ['robots', robotId, 'state'] as const,
+    factsheet: (robotId: string) => ['robots', robotId, 'factsheet'] as const,
   },
   maps: {
     all: ['maps'] as const,

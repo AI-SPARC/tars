@@ -1,11 +1,11 @@
 import { Activity, Map, RadioTower, Route, Settings, TrafficCone, Truck } from 'lucide-react';
+import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 
 import aiSparcLogo from './assets/ai-sparc-logo.png';
 import { Button } from './components/ui/button';
 import { Card, CardContent } from './components/ui/card';
 import { useEvents } from './hooks/useEvents';
 import { getBrandAttribution, getNavigationItems } from './navigation';
-import { DashboardPage } from './pages/DashboardPage';
 import './styles.css';
 
 const icons = [Activity, Truck, Map, Route, TrafficCone, RadioTower, Settings];
@@ -14,6 +14,7 @@ export function App() {
   useEvents();
   const items = getNavigationItems();
   const attribution = getBrandAttribution();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   return (
     <main className="grid min-h-screen min-w-[1024px] grid-cols-[292px_minmax(0,1fr)] bg-background text-foreground [background-image:radial-gradient(circle_at_80%_10%,rgba(0,0,0,0.035),transparent_28rem)]">
@@ -37,12 +38,16 @@ export function App() {
                   asChild
                   className="h-10 justify-start gap-2 px-3 font-normal"
                   key={item.path}
-                  variant={index === 0 ? 'outline' : 'ghost'}
+                  variant={
+                    pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))
+                      ? 'outline'
+                      : 'ghost'
+                  }
                 >
-                  <a href={item.path}>
+                  <Link to={item.path}>
                     <Icon size={17} strokeWidth={1.8} />
                     {item.label}
-                  </a>
+                  </Link>
                 </Button>
               );
             })}
@@ -71,7 +76,7 @@ export function App() {
           <strong className="font-medium text-foreground">Topic root: vda5050/v3</strong>
         </header>
 
-        <DashboardPage />
+        <Outlet />
       </section>
     </main>
   );

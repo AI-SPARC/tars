@@ -38,6 +38,20 @@ class RobotStateRead(BaseModel):
     raw_payload: dict[str, Any] = Field(serialization_alias="rawPayload")
 
 
+class InstantActionCreate(BaseModel):
+    action_type: str = Field(alias="actionType", min_length=1)
+    action_parameters: list[dict[str, Any]] | None = Field(
+        default=None, alias="actionParameters"
+    )
+
+
+class InstantActionRead(BaseModel):
+    accepted: bool
+    topic: str
+    payload: dict[str, Any]
+    errors: list[str]
+
+
 class MapCreate(BaseModel):
     name: str
     description: str | None = None

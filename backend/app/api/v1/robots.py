@@ -1,14 +1,23 @@
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 
 from app.api.deps import EventBusDep, SessionDep
-from app.api.v1.schemas import RobotCreate, RobotRead, RobotStateRead
+from app.api.v1.schemas import (
+    InstantActionCreate,
+    InstantActionRead,
+    RobotCreate,
+    RobotRead,
+    RobotStateRead,
+)
 from app.db.base import Robot, RobotStateSnapshot
+from app.mqtt.outbound import MqttPublisher, get_mqtt_publisher
+from app.services.instant_action_service import InstantActionService
 from app.services.robot_registry import RobotRegistryService
 
 router = APIRouter(prefix="/robots", tags=["robots"])
+PublisherDep = Annotated[MqttPublisher, Depends(get_mqtt_publisher)]
 
 
 @router.get("", response_model=list[RobotRead])
@@ -60,6 +69,32 @@ async def get_robot_factsheet(robot_id: str, session: SessionDep) -> dict[str, A
             status_code=status.HTTP_404_NOT_FOUND, detail="Robot factsheet not found"
         )
     return robot.factsheet
+
+
+@router.post(
+    "/{robot_id}/instant-actions",
+    response_model=InstantActionRead,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def send_instant_action(
+    robot_id: str,
+    payload: InstantActionCreate,
+    session: SessionDep,
+    publisher: PublisherDep,
+    event_bus: EventBusDep,
+) -> InstantActionRead:
+    result = await InstantActionService(session, publisher, event_bus).send(
+        robot_id, payload.action_type, payload.action_parameters
+    )
+    if not result.accepted:
+        status_code = status.HTTP_404_NOT_FOUND if result.errors == ["Robot not found"] else 400
+        raise HTTPException(status_code=status_code, detail=result.errors)
+    return InstantActionRead(
+        accepted=True,
+        topic=result.topic,
+        payload=result.payload,
+        errors=[],
+    )
 
 
 async def _ensure_robot_exists(robot_id: str, session: SessionDep) -> Robot:

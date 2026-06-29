@@ -67,6 +67,12 @@ class SimulatedRobot:
         self.current_order_id = str(payload.get("orderId", ""))
         self.current_order_update_id = int(payload.get("orderUpdateId", 0))
 
+    def apply_instant_actions(self, payload: dict[str, Any]) -> None:
+        actions = payload.get("actions") or []
+        if any(action.get("actionType") == "cancelOrder" for action in actions):
+            self.current_order_id = ""
+            self.current_order_update_id = 0
+
     def _next_header_id(self) -> int:
         self.header_id += 1
         return self.header_id

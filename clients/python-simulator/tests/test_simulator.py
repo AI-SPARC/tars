@@ -25,3 +25,16 @@ def test_simulated_robot_tracks_received_order_in_next_state() -> None:
 
     assert publication.payload["orderId"] == "order-42"
     assert publication.payload["orderUpdateId"] == 3
+
+
+def test_simulated_robot_clears_order_after_cancel_order_instant_action() -> None:
+    robot = SimulatedRobot(RobotIdentity("ResearchBot", "RB-CANCEL"))
+    robot.apply_order({"orderId": "order-42", "orderUpdateId": 3})
+
+    robot.apply_instant_actions(
+        {"actions": [{"actionId": "cancel-1", "actionType": "cancelOrder"}]}
+    )
+
+    publication = robot.state_publication()
+    assert publication.payload["orderId"] == ""
+    assert publication.payload["orderUpdateId"] == 0
