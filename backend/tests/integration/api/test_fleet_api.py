@@ -1,0 +1,243 @@
+from collections.abc import AsyncIterator
+from dataclasses import dataclass
+
+import pytest
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from app.api.deps import get_session
+from app.db.base import Base
+from app.main import app
+from app.mqtt.outbound import RecordingMqttPublisher, get_mqtt_publisher
+from app.services.robot_registry import RobotRegistryService
+
+
+@dataclass(frozen=True)
+class ApiTestContext:
+    client: AsyncClient
+    maker: async_sessionmaker[AsyncSession]
+    publisher: RecordingMqttPublisher
+
+
+@pytest.fixture
+async def context() -> AsyncIterator[ApiTestContext]:
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    maker = async_sessionmaker(engine, expire_on_commit=False)
+
+    publisher = RecordingMqttPublisher()
+
+    async def override_session():
+        async with maker() as session:
+            yield session
+
+    def override_publisher() -> RecordingMqttPublisher:
+        return publisher
+
+    app.dependency_overrides[get_session] = override_session
+    app.dependency_overrides[get_mqtt_publisher] = override_publisher
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as test_client:
+        yield ApiTestContext(client=test_client, maker=maker, publisher=publisher)
+    app.dependency_overrides.clear()
+    await engine.dispose()
+
+
+async def test_create_and_list_robots(context: ApiTestContext) -> None:
+    create_response = await context.client.post(
+        "/api/v1/robots",
+        json={"manufacturer": "ResearchBot", "serialNumber": "RB001", "displayName": "Lab robot"},
+    )
+
+    assert create_response.status_code == 201
+    assert create_response.json()["serialNumber"] == "RB001"
+
+    list_response = await context.client.get("/api/v1/robots")
+
+    assert list_response.status_code == 200
+    assert list_response.json()[0]["manufacturer"] == "ResearchBot"
+
+
+async def test_get_robot_detail_latest_state_and_factsheet(context: ApiTestContext) -> None:
+    create_response = await context.client.post(
+        "/api/v1/robots",
+        json={"manufacturer": "ResearchBot", "serialNumber": "RB010", "displayName": "Robot 10"},
+    )
+    robot_id = create_response.json()["id"]
+
+    async with context.maker() as session:
+        service = RobotRegistryService(session)
+        await service.update_factsheet(robot_id, {"typeSpecification": {"seriesName": "RB"}})
+        await service.save_state_snapshot(
+            robot_id,
+            {
+                "headerId": 99,
+                "orderId": "order-99",
+                "orderUpdateId": 1,
+                "lastNodeId": "B",
+                "lastNodeSequenceId": 2,
+                "batteryState": {"batteryCharge": 42.0},
+                "operatingMode": "AUTOMATIC",
+                "errors": [],
+                "safetyState": {"eStop": "NONE", "fieldViolation": False},
+                "agvPosition": {"x": 1.0, "y": 2.0, "theta": 0.0, "mapId": "lab"},
+                "nodeStates": [],
+                "edgeStates": [],
+                "actionStates": [],
+            },
+        )
+
+    detail_response = await context.client.get(f"/api/v1/robots/{robot_id}")
+    state_response = await context.client.get(f"/api/v1/robots/{robot_id}/state/latest")
+    factsheet_response = await context.client.get(f"/api/v1/robots/{robot_id}/factsheet")
+
+    assert detail_response.status_code == 200
+    assert detail_response.json()["displayName"] == "Robot 10"
+    assert state_response.status_code == 200
+    assert state_response.json()["batteryCharge"] == 42.0
+    assert state_response.json()["rawPayload"]["lastNodeId"] == "B"
+    assert factsheet_response.status_code == 200
+    assert factsheet_response.json()["typeSpecification"]["seriesName"] == "RB"
+
+
+async def test_send_cancel_order_instant_action(context: ApiTestContext) -> None:
+    robot_response = await context.client.post(
+        "/api/v1/robots", json={"manufacturer": "ResearchBot", "serialNumber": "RB-CANCEL"}
+    )
+
+    response = await context.client.post(
+        f"/api/v1/robots/{robot_response.json()['id']}/instant-actions",
+        json={"actionType": "cancelOrder"},
+    )
+
+    assert response.status_code == 202
+    assert response.json()["payload"]["actions"][0]["actionType"] == "cancelOrder"
+    assert context.publisher.publications[-1].topic.endswith("/instantActions")
+
+
+async def test_create_map_with_nodes_and_route_preview(context: ApiTestContext) -> None:
+    map_response = await context.client.post("/api/v1/maps", json={"name": "Lab"})
+    map_id = map_response.json()["id"]
+
+    await context.client.post(f"/api/v1/maps/{map_id}/nodes", json={"nodeKey": "A", "x": 0, "y": 0})
+    await context.client.post(f"/api/v1/maps/{map_id}/nodes", json={"nodeKey": "B", "x": 1, "y": 0})
+    edge_response = await context.client.post(
+        f"/api/v1/maps/{map_id}/edges",
+        json={"edgeKey": "A-B", "fromNodeKey": "A", "toNodeKey": "B", "distance": 1.0},
+    )
+
+    assert edge_response.status_code == 201
+
+    route_response = await context.client.post(
+        f"/api/v1/maps/{map_id}/route-preview", json={"startNodeKey": "A", "goalNodeKey": "B"}
+    )
+
+    assert route_response.status_code == 200
+    assert route_response.json()["nodeKeys"] == ["A", "B"]
+
+    detail_response = await context.client.get(f"/api/v1/maps/{map_id}")
+    assert detail_response.status_code == 200
+    assert [node["nodeKey"] for node in detail_response.json()["nodes"]] == ["A", "B"]
+    assert detail_response.json()["edges"][0] == {
+        "id": edge_response.json()["id"],
+        "edgeKey": "A-B",
+        "fromNodeKey": "A",
+        "toNodeKey": "B",
+        "distance": 1.0,
+        "bidirectional": False,
+    }
+
+
+async def test_map_api_rejects_dangling_and_invalid_edges(context: ApiTestContext) -> None:
+    map_response = await context.client.post("/api/v1/maps", json={"name": "Validated map"})
+    map_id = map_response.json()["id"]
+    await context.client.post(
+        f"/api/v1/maps/{map_id}/nodes", json={"nodeKey": "A", "x": 0, "y": 0}
+    )
+
+    dangling = await context.client.post(
+        f"/api/v1/maps/{map_id}/edges",
+        json={"edgeKey": "A-B", "fromNodeKey": "A", "toNodeKey": "B", "distance": 1},
+    )
+    invalid_distance = await context.client.post(
+        f"/api/v1/maps/{map_id}/edges",
+        json={"edgeKey": "A-A", "fromNodeKey": "A", "toNodeKey": "A", "distance": 0},
+    )
+
+    assert dangling.status_code == 422
+    assert dangling.json()["detail"] == "Map nodes not found: B"
+    assert invalid_distance.status_code == 422
+
+
+async def test_create_mission(context: ApiTestContext) -> None:
+    robot_response = await context.client.post(
+        "/api/v1/robots", json={"manufacturer": "ResearchBot", "serialNumber": "RB003"}
+    )
+    map_response = await context.client.post("/api/v1/maps", json={"name": "Mission map"})
+    map_id = map_response.json()["id"]
+    await context.client.post(
+        f"/api/v1/maps/{map_id}/nodes", json={"nodeKey": "A", "x": 0, "y": 0}
+    )
+    await context.client.post(
+        f"/api/v1/maps/{map_id}/nodes", json={"nodeKey": "B", "x": 1, "y": 0}
+    )
+
+    mission_response = await context.client.post(
+        "/api/v1/missions",
+        json={
+            "mapId": map_id,
+            "assignedRobotId": robot_response.json()["id"],
+            "startNodeKey": "A",
+            "goalNodeKey": "B",
+        },
+    )
+
+    assert mission_response.status_code == 201
+    assert mission_response.json()["status"] == "assigned"
+    assert mission_response.json()["mapId"] == map_id
+
+
+async def test_dispatch_mission_publishes_order(context: ApiTestContext) -> None:
+    robot_response = await context.client.post(
+        "/api/v1/robots", json={"manufacturer": "ResearchBot", "serialNumber": "RB004"}
+    )
+    map_response = await context.client.post("/api/v1/maps", json={"name": "Dispatch map"})
+    map_id = map_response.json()["id"]
+    await context.client.post(
+        f"/api/v1/maps/{map_id}/nodes", json={"nodeKey": "Dock", "x": 2, "y": 3}
+    )
+    await context.client.post(
+        f"/api/v1/maps/{map_id}/nodes", json={"nodeKey": "Shelf", "x": 8, "y": 5}
+    )
+    await context.client.post(
+        f"/api/v1/maps/{map_id}/edges",
+        json={
+            "edgeKey": "Dock-Shelf",
+            "fromNodeKey": "Dock",
+            "toNodeKey": "Shelf",
+            "distance": 6.3,
+        },
+    )
+    mission_response = await context.client.post(
+        "/api/v1/missions",
+        json={
+            "mapId": map_id,
+            "assignedRobotId": robot_response.json()["id"],
+            "startNodeKey": "Dock",
+            "goalNodeKey": "Shelf",
+        },
+    )
+
+    dispatch_response = await context.client.post(
+        f"/api/v1/missions/{mission_response.json()['id']}/dispatch"
+    )
+
+    assert dispatch_response.status_code == 202
+    body = dispatch_response.json()
+    assert body["accepted"] is True
+    assert body["topic"] == "vda5050/v3/ResearchBot/RB004/order"
+    assert body["payload"]["orderId"] == mission_response.json()["id"]
+    assert body["payload"]["nodes"][0]["nodePosition"]["x"] == 2
+    assert body["payload"]["nodes"][1]["nodePosition"]["x"] == 8
+    assert len(context.publisher.publications) == 1
+    assert context.publisher.publications[0].topic == "vda5050/v3/ResearchBot/RB004/order"

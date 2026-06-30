@@ -1,0 +1,108 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: tars
+      POSTGRES_USER: tars
+      POSTGRES_PASSWORD: tars
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tars -d tars"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./infra/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-log:/mosquitto/log
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -t '$$SYS/#' -C 1 -W 2 >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    env_file:
+      - .env.example
+    environment:
+      DATABASE_URL: postgresql+asyncpg://tars:tars@postgres:5432/tars
+      MQTT_HOST: mosquitto
+      MQTT_ENABLED: "true"
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        - CMD
+        - uv
+        - run
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000/api/v1
+      VITE_WS_URL: ws://localhost:8000/api/v1/events/ws
+    ports:
+      - "5173:5173"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5173"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  robot-simulator:
+    build:
+      context: ./clients/python-simulator
+    profiles:
+      - simulator
+    environment:
+      MQTT_HOST: mosquitto
+      MQTT_PORT: 1883
+    command:
+      - uv
+      - run
+      - tars-robot-sim
+      - --mqtt-host
+      - mosquitto
+      - --serial-number
+      - RB-SIM-001
+      - --state-interval
+      - "2"
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  mosquitto-data:
+  mosquitto-log:
