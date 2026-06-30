@@ -31,3 +31,7 @@ queries. Partial API failures are surfaced without hiding successfully loaded op
 The mission workspace uses the same persisted graph for route preview and backend dispatch. The
 operator selects a robot and graph endpoints, creates an assigned mission, then receives the exact
 validated VDA 5050 order payload after MQTT publication.
+
+The MQTT/VDA workspace reads the paginated persistence API with filters encoded in its query key.
+WebSocket message events invalidate the MQTT cache prefix, preserving the active filters while
+refreshing the current page. Payloads and schema validation errors remain inspectable side by side.

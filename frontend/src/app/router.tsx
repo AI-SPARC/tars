@@ -4,6 +4,7 @@ import { App } from '../App';
 import { DashboardPage } from '../pages/DashboardPage';
 import { MapPage } from '../pages/MapPage';
 import { MissionsPage } from '../pages/MissionsPage';
+import { MqttLogsPage } from '../pages/MqttLogsPage';
 import { PlaceholderPage } from '../pages/PlaceholderPage';
 import { RobotDetailPage } from '../pages/RobotDetailPage';
 import { RobotsPage } from '../pages/RobotsPage';
@@ -34,10 +35,14 @@ const missionsRoute = createRoute({
   path: '/missions',
   component: MissionsPage,
 });
+const mqttLogsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mqtt',
+  component: MqttLogsPage,
+});
 
 const placeholders = [
   ['/traffic', 'Traffic'],
-  ['/mqtt', 'MQTT / VDA Logs'],
   ['/settings', 'Settings'],
 ] as const;
 const placeholderRoutes = placeholders.map(([path, title]) =>
@@ -54,6 +59,7 @@ export const routeTree = rootRoute.addChildren([
   robotDetailRoute,
   mapRoute,
   missionsRoute,
+  mqttLogsRoute,
   ...placeholderRoutes,
 ]);
 
