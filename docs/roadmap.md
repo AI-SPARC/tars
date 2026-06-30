@@ -1,6 +1,7 @@
 # Development Roadmap
 
-The current priority is completing the operational v1 fleet-manager flow and its Docker E2E.
+The operational v1 fleet-manager baseline and its Docker E2E are complete. The items below are
+explicitly deferred until post-v1 development begins.
 
 ## Post-v1 map interoperability
 
