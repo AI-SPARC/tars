@@ -16,6 +16,23 @@ vda5050/v3/ResearchBot/RB001/order
 vda5050/v3/ResearchBot/RB001/connection
 ```
 
+Minimal connection payload:
+
+```json
+{
+  "headerId": 1,
+  "timestamp": "2026-06-25T13:00:00.000Z",
+  "version": "3.0.0",
+  "manufacturer": "ResearchBot",
+  "serialNumber": "RB001",
+  "connectionState": "ONLINE"
+}
+```
+
+Outbound `order` and `instantActions` messages use the same header identity. Orders are built from
+the persisted graph with alternating node/edge sequence IDs; instant actions contain one or more
+actions with `blockingType: "NONE"`.
+
 QoS:
 
 - QoS 0: `order`, `instantActions`, `state`, `factsheet`, `zoneSet`, `responses`, `visualization`.

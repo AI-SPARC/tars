@@ -41,11 +41,23 @@ services:
       MQTT_ENABLED: "true"
     ports:
       - "8000:8000"
+    healthcheck:
+      test:
+        - CMD
+        - uv
+        - run
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
     depends_on:
       postgres:
         condition: service_healthy
       mosquitto:
-        condition: service_started
+        condition: service_healthy
 
   frontend:
     build:
@@ -56,8 +68,15 @@ services:
       VITE_WS_URL: ws://localhost:8000/api/v1/events/ws
     ports:
       - "5173:5173"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5173"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
   robot-simulator:
     build:
@@ -79,9 +98,9 @@ services:
       - "2"
     depends_on:
       mosquitto:
-        condition: service_started
+        condition: service_healthy
       backend:
-        condition: service_started
+        condition: service_healthy
 
 volumes:
   postgres-data:

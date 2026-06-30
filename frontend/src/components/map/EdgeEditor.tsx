@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 
 import type { MapEdgeInput, MapNode } from '../../api/client';
 import { Button } from '../ui/button';
@@ -18,17 +18,19 @@ export function EdgeEditor({
   const [distance, setDistance] = useState('1');
   const [bidirectional, setBidirectional] = useState(false);
 
-  useEffect(() => {
-    if (!fromNodeKey && nodes[0]) setFromNodeKey(nodes[0].nodeKey);
-    if (!toNodeKey && nodes[1]) setToNodeKey(nodes[1].nodeKey);
-  }, [fromNodeKey, nodes, toNodeKey]);
+  const resolvedFromNodeKey = nodes.some((node) => node.nodeKey === fromNodeKey)
+    ? fromNodeKey
+    : nodes[0]?.nodeKey ?? '';
+  const resolvedToNodeKey = nodes.some((node) => node.nodeKey === toNodeKey)
+    ? toNodeKey
+    : nodes[1]?.nodeKey ?? nodes[0]?.nodeKey ?? '';
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     await onSubmit({
       edgeKey: edgeKey.trim(),
-      fromNodeKey,
-      toNodeKey,
+      fromNodeKey: resolvedFromNodeKey,
+      toNodeKey: resolvedToNodeKey,
       distance: Number(distance),
       bidirectional,
     });
@@ -43,8 +45,8 @@ export function EdgeEditor({
         <input className="h-9 rounded-md border bg-background px-3" onChange={(event) => setEdgeKey(event.target.value)} required value={edgeKey} />
       </label>
       <div className="grid grid-cols-2 gap-2">
-        <NodeSelect label="From" nodes={nodes} onChange={setFromNodeKey} value={fromNodeKey} />
-        <NodeSelect label="To" nodes={nodes} onChange={setToNodeKey} value={toNodeKey} />
+        <NodeSelect label="From" nodes={nodes} onChange={setFromNodeKey} value={resolvedFromNodeKey} />
+        <NodeSelect label="To" nodes={nodes} onChange={setToNodeKey} value={resolvedToNodeKey} />
       </div>
       <label className="grid gap-1 text-xs font-medium">
         Distance

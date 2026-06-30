@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 
 import type { FleetMap, MapNode, MissionInput, Robot } from '../../api/client';
 import { Button } from '../ui/button';
@@ -29,29 +29,29 @@ export function MissionForm({
   const [goalNodeKey, setGoalNodeKey] = useState('');
   const [priority, setPriority] = useState('0');
 
-  useEffect(() => {
-    if (!robotId && robots[0]) setRobotId(robots[0].id);
-  }, [robotId, robots]);
-  useEffect(() => {
-    if (!startNodeKey && nodes[0]) setStartNodeKey(nodes[0].nodeKey);
-    if (!goalNodeKey && nodes[1]) setGoalNodeKey(nodes[1].nodeKey);
-  }, [goalNodeKey, nodes, startNodeKey]);
-  useEffect(() => {
-    setStartNodeKey('');
-    setGoalNodeKey('');
-  }, [selectedMapId]);
+  const resolvedRobotId = robots.some((robot) => robot.id === robotId)
+    ? robotId
+    : robots[0]?.id ?? '';
+  const resolvedStartNodeKey = nodes.some((node) => node.nodeKey === startNodeKey)
+    ? startNodeKey
+    : nodes[0]?.nodeKey ?? '';
+  const resolvedGoalNodeKey = nodes.some((node) => node.nodeKey === goalNodeKey)
+    ? goalNodeKey
+    : nodes[1]?.nodeKey ?? nodes[0]?.nodeKey ?? '';
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     await onSubmit({
       mapId: selectedMapId,
-      assignedRobotId: robotId,
-      startNodeKey,
-      goalNodeKey,
+      assignedRobotId: resolvedRobotId,
+      startNodeKey: resolvedStartNodeKey,
+      goalNodeKey: resolvedGoalNodeKey,
       priority: Number(priority),
     });
   };
-  const ready = Boolean(selectedMapId && robotId && startNodeKey && goalNodeKey);
+  const ready = Boolean(
+    selectedMapId && resolvedRobotId && resolvedStartNodeKey && resolvedGoalNodeKey,
+  );
 
   return (
     <form className="grid gap-4" onSubmit={submit}>
@@ -62,20 +62,20 @@ export function MissionForm({
         </select>
       </Field>
       <Field label="Robot">
-        <select onChange={(event) => setRobotId(event.target.value)} required value={robotId}>
+        <select onChange={(event) => setRobotId(event.target.value)} required value={resolvedRobotId}>
           <option value="">Select a robot</option>
           {robots.map((robot) => <option key={robot.id} value={robot.id}>{robot.displayName || robot.serialNumber}</option>)}
         </select>
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Start node">
-          <select onChange={(event) => setStartNodeKey(event.target.value)} required value={startNodeKey}>
+          <select onChange={(event) => setStartNodeKey(event.target.value)} required value={resolvedStartNodeKey}>
             <option value="">Select</option>
             {nodes.map((node) => <option key={node.id} value={node.nodeKey}>{node.nodeKey}</option>)}
           </select>
         </Field>
         <Field label="Goal node">
-          <select onChange={(event) => setGoalNodeKey(event.target.value)} required value={goalNodeKey}>
+          <select onChange={(event) => setGoalNodeKey(event.target.value)} required value={resolvedGoalNodeKey}>
             <option value="">Select</option>
             {nodes.map((node) => <option key={node.id} value={node.nodeKey}>{node.nodeKey}</option>)}
           </select>
@@ -88,7 +88,7 @@ export function MissionForm({
         {route?.length ? route.join(' → ') : 'Preview the route before creating the mission.'}
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <Button disabled={!ready || busy} onClick={() => onPreview(startNodeKey, goalNodeKey)} type="button" variant="outline">
+        <Button disabled={!ready || busy} onClick={() => onPreview(resolvedStartNodeKey, resolvedGoalNodeKey)} type="button" variant="outline">
           Preview route
         </Button>
         <Button disabled={!ready || busy} type="submit">Create mission</Button>

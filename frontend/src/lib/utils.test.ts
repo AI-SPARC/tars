@@ -4,6 +4,7 @@ import { cn } from './utils';
 
 describe('cn', () => {
   it('merges conditional class names and resolves tailwind conflicts', () => {
-    expect(cn('rounded-md px-2', false && 'hidden', 'px-4')).toBe('rounded-md px-4');
+    const hidden = false;
+    expect(cn('rounded-md px-2', hidden ? 'hidden' : undefined, 'px-4')).toBe('rounded-md px-4');
   });
 });

@@ -72,4 +72,4 @@ MVP rewrite in progress. Robot discovery and telemetry ingestion, graph maps and
 creation, VDA 5050 order dispatch, persistence, MQTT log inspection, real-time WebSocket events,
 a live operations dashboard, fleet/robot detail pages, and a basic simulator are implemented.
 A graph map editor/viewer, mission builder/dispatcher, and filtered MQTT/VDA log inspector are
-also available. Full Docker broker E2E and final QA remain in progress.
+also available. Clean-stack Docker E2E, browser smoke tests, and CI quality gates are automated.

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 
 import { EdgeEditor } from '../components/map/EdgeEditor';
 import { MapGraph } from '../components/map/MapGraph';
@@ -19,17 +19,14 @@ import { useRobots, useRobotStates } from '../hooks/useRobots';
 export function MapPage() {
   const maps = useMaps();
   const [selectedMapId, setSelectedMapId] = useState<string>();
-  const map = useMap(selectedMapId);
+  const activeMapId = selectedMapId ?? maps.data?.[0]?.id;
+  const map = useMap(activeMapId);
   const robots = useRobots();
   const robotStates = useRobotStates((robots.data ?? []).map((robot) => robot.id));
   const createMap = useCreateMap();
-  const addNode = useAddMapNode(selectedMapId);
-  const addEdge = useAddMapEdge(selectedMapId);
-  const routePreview = useRoutePreview(selectedMapId);
-
-  useEffect(() => {
-    if (!selectedMapId && maps.data?.[0]) setSelectedMapId(maps.data[0].id);
-  }, [maps.data, selectedMapId]);
+  const addNode = useAddMapNode(activeMapId);
+  const addEdge = useAddMapEdge(activeMapId);
+  const routePreview = useRoutePreview(activeMapId);
 
   const robotPositions = useMemo(
     () =>
@@ -48,7 +45,7 @@ export function MapPage() {
           <h1 className="m-0 text-5xl tracking-[-0.06em]">Map & Routes</h1>
           <p className="mb-0 mt-3 text-muted-foreground">Build a directed weighted graph and inspect robot positions.</p>
         </div>
-        <select className="h-10 min-w-56 rounded-md border bg-card px-3 text-sm" onChange={(event) => setSelectedMapId(event.target.value || undefined)} value={selectedMapId ?? ''}>
+        <select className="h-10 min-w-56 rounded-md border bg-card px-3 text-sm" onChange={(event) => setSelectedMapId(event.target.value || undefined)} value={activeMapId ?? ''}>
           <option value="">Select a map</option>
           {(maps.data ?? []).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select>
@@ -105,16 +102,14 @@ function CreateMapForm({ disabled, onSubmit }: { disabled: boolean; onSubmit: (n
 function RoutePreviewForm({ nodes, disabled, onSubmit, result }: { nodes: string[]; disabled: boolean; onSubmit: (start: string, goal: string) => void; result?: string[] }) {
   const [start, setStart] = useState('');
   const [goal, setGoal] = useState('');
-  useEffect(() => {
-    if (!start && nodes[0]) setStart(nodes[0]);
-    if (!goal && nodes[1]) setGoal(nodes[1]);
-  }, [goal, nodes, start]);
+  const resolvedStart = nodes.includes(start) ? start : nodes[0] ?? '';
+  const resolvedGoal = nodes.includes(goal) ? goal : nodes[1] ?? nodes[0] ?? '';
   return (
     <Card className="rounded-2xl bg-card/80 shadow-none">
       <CardContent className="flex items-end gap-3 pt-6">
-        <RouteSelect label="Start" nodes={nodes} onChange={setStart} value={start} />
-        <RouteSelect label="Goal" nodes={nodes} onChange={setGoal} value={goal} />
-        <Button disabled={disabled || !start || !goal} onClick={() => onSubmit(start, goal)} size="sm">Preview route</Button>
+        <RouteSelect label="Start" nodes={nodes} onChange={setStart} value={resolvedStart} />
+        <RouteSelect label="Goal" nodes={nodes} onChange={setGoal} value={resolvedGoal} />
+        <Button disabled={disabled || !resolvedStart || !resolvedGoal} onClick={() => onSubmit(resolvedStart, resolvedGoal)} size="sm">Preview route</Button>
         <span className="ml-auto text-sm text-muted-foreground">{result?.join(' → ') || 'No route preview'}</span>
       </CardContent>
     </Card>

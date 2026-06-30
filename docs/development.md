@@ -18,6 +18,14 @@ npm test -- --run
 npm run build
 ```
 
+Additional frontend quality commands:
+
+```bash
+npm run lint
+npx playwright install chromium
+npm run test:e2e
+```
+
 The frontend reads these optional environment variables:
 
 ```text
@@ -43,6 +51,21 @@ uv run tars-robot-sim --mqtt-host localhost --serial-number RB-SIM-001 --once
 docker compose config
 docker compose up --build
 ```
+
+The backend container applies all Alembic migrations before starting Uvicorn. To reproduce the
+clean-stack verification used by CI:
+
+```bash
+docker compose -p tars-e2e --profile simulator up --build --wait -d
+python scripts/e2e_order_flow.py
+cd frontend
+npm run test:e2e
+cd ..
+docker compose -p tars-e2e --profile simulator down -v
+```
+
+The Python smoke script verifies a complete graph/mission/order cycle through the real broker and
+waits until the simulator returns the dispatched `orderId` in its state.
 
 Optional simulator profile:
 

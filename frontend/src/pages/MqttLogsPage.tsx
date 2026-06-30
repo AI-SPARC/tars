@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import type { MqttMessage, MqttMessageFilters } from '../api/client';
 import { MqttMessageTable } from '../components/mqtt/MqttMessageTable';
@@ -17,11 +17,9 @@ export function MqttLogsPage() {
   const messages = useMqttMessages(filters);
   const [selected, setSelected] = useState<MqttMessage>();
 
-  useEffect(() => {
-    if (selected && !messages.data?.items.some((message) => message.id === selected.id)) {
-      setSelected(undefined);
-    }
-  }, [messages.data?.items, selected]);
+  const selectedMessage = messages.data?.items.some((message) => message.id === selected?.id)
+    ? selected
+    : undefined;
 
   const updateFilter = (key: keyof MqttMessageFilters, value: string) => {
     setFilters((current) => ({
@@ -51,7 +49,7 @@ export function MqttLogsPage() {
       {messages.isError && <div className="rounded-xl border bg-card p-3 text-sm" role="alert">{messages.error.message}</div>}
       <section className="grid grid-cols-[minmax(0,1fr)_380px] items-start gap-4">
         <div className="grid gap-3">
-          {messages.isLoading ? <div aria-label="Loading MQTT messages" className="h-64 animate-pulse rounded-xl border bg-card" /> : <MqttMessageTable messages={messages.data?.items ?? []} onSelect={setSelected} selectedId={selected?.id} />}
+          {messages.isLoading ? <div aria-label="Loading MQTT messages" className="h-64 animate-pulse rounded-xl border bg-card" /> : <MqttMessageTable messages={messages.data?.items ?? []} onSelect={setSelected} selectedId={selectedMessage?.id} />}
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>{messages.data?.total ?? 0} messages · page {page} of {Math.max(messages.data?.pages ?? 0, 1)}</span>
             <div className="flex gap-2">
@@ -60,7 +58,7 @@ export function MqttLogsPage() {
             </div>
           </div>
         </div>
-        <PayloadViewer message={selected} />
+        <PayloadViewer message={selectedMessage} />
       </section>
     </div>
   );

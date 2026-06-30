@@ -1,6 +1,7 @@
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
 WORKDIR /app
+ENV UV_NO_SYNC=1
 
 COPY pyproject.toml ./
 COPY src ./src

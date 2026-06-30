@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { MissionForm } from '../components/missions/MissionForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -10,13 +10,10 @@ export function MissionBuilderPage() {
   const maps = useMaps();
   const robots = useRobots();
   const [selectedMapId, setSelectedMapId] = useState('');
-  const map = useMap(selectedMapId || undefined);
-  const routePreview = useRoutePreview(selectedMapId || undefined);
+  const activeMapId = selectedMapId || maps.data?.[0]?.id || '';
+  const map = useMap(activeMapId || undefined);
+  const routePreview = useRoutePreview(activeMapId || undefined);
   const createMission = useCreateMission();
-
-  useEffect(() => {
-    if (!selectedMapId && maps.data?.[0]) setSelectedMapId(maps.data[0].id);
-  }, [maps.data, selectedMapId]);
 
   return (
     <Card className="rounded-2xl bg-card/80 shadow-none">
@@ -39,7 +36,7 @@ export function MissionBuilderPage() {
           onSubmit={(input) => createMission.mutateAsync(input)}
           robots={robots.data ?? []}
           route={routePreview.data?.nodeKeys}
-          selectedMapId={selectedMapId}
+          selectedMapId={activeMapId}
         />
         {createMission.isSuccess && (
           <div className="rounded-xl border bg-background p-3 text-sm" role="status">
