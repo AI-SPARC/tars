@@ -53,7 +53,7 @@ class InstantActionRead(BaseModel):
 
 
 class MapCreate(BaseModel):
-    name: str
+    name: str = Field(min_length=1, max_length=160)
     description: str | None = None
 
 
@@ -87,17 +87,17 @@ class MapDetailRead(MapRead):
 
 
 class NodeCreate(BaseModel):
-    node_key: str = Field(alias="nodeKey")
+    node_key: str = Field(alias="nodeKey", min_length=1, max_length=128)
     x: float
     y: float
     theta: float = 0.0
 
 
 class EdgeCreate(BaseModel):
-    edge_key: str = Field(alias="edgeKey")
-    from_node_key: str = Field(alias="fromNodeKey")
-    to_node_key: str = Field(alias="toNodeKey")
-    distance: float = 1.0
+    edge_key: str = Field(alias="edgeKey", min_length=1, max_length=128)
+    from_node_key: str = Field(alias="fromNodeKey", min_length=1, max_length=128)
+    to_node_key: str = Field(alias="toNodeKey", min_length=1, max_length=128)
+    distance: float = Field(default=1.0, gt=0)
     bidirectional: bool = False
 
 

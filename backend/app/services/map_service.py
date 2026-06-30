@@ -35,6 +35,12 @@ class MapService:
     async def add_node(
         self, map_id: str, node_key: str, x: float, y: float, theta: float = 0.0
     ) -> MapNode:
+        await self._ensure_map_exists(map_id)
+        existing = await self.session.scalar(
+            select(MapNode.id).where(MapNode.map_id == map_id, MapNode.node_key == node_key)
+        )
+        if existing is not None:
+            raise ValueError(f"Node key already exists: {node_key}")
         node = MapNode(map_id=map_id, node_key=node_key, x=x, y=y, theta=theta)
         self.session.add(node)
         await self.session.commit()
@@ -50,6 +56,27 @@ class MapService:
         distance: float,
         bidirectional: bool = False,
     ) -> MapEdge:
+        await self._ensure_map_exists(map_id)
+        if distance <= 0:
+            raise ValueError("Edge distance must be positive")
+        existing = await self.session.scalar(
+            select(MapEdge.id).where(MapEdge.map_id == map_id, MapEdge.edge_key == edge_key)
+        )
+        if existing is not None:
+            raise ValueError(f"Edge key already exists: {edge_key}")
+        node_keys = set(
+            (
+                await self.session.execute(
+                    select(MapNode.node_key).where(
+                        MapNode.map_id == map_id,
+                        MapNode.node_key.in_([from_node_key, to_node_key]),
+                    )
+                )
+            ).scalars()
+        )
+        missing = {from_node_key, to_node_key} - node_keys
+        if missing:
+            raise ValueError(f"Map nodes not found: {', '.join(sorted(missing))}")
         edge = MapEdge(
             map_id=map_id,
             edge_key=edge_key,
@@ -129,3 +156,7 @@ class MapService:
             nodes=[nodes_by_key[node_key] for node_key in node_keys],
             legs=legs,
         )
+
+    async def _ensure_map_exists(self, map_id: str) -> None:
+        if await self.session.get(MapLayout, map_id) is None:
+            raise ValueError("Map not found")

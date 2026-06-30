@@ -148,6 +148,27 @@ async def test_create_map_with_nodes_and_route_preview(context: ApiTestContext) 
     }
 
 
+async def test_map_api_rejects_dangling_and_invalid_edges(context: ApiTestContext) -> None:
+    map_response = await context.client.post("/api/v1/maps", json={"name": "Validated map"})
+    map_id = map_response.json()["id"]
+    await context.client.post(
+        f"/api/v1/maps/{map_id}/nodes", json={"nodeKey": "A", "x": 0, "y": 0}
+    )
+
+    dangling = await context.client.post(
+        f"/api/v1/maps/{map_id}/edges",
+        json={"edgeKey": "A-B", "fromNodeKey": "A", "toNodeKey": "B", "distance": 1},
+    )
+    invalid_distance = await context.client.post(
+        f"/api/v1/maps/{map_id}/edges",
+        json={"edgeKey": "A-A", "fromNodeKey": "A", "toNodeKey": "A", "distance": 0},
+    )
+
+    assert dangling.status_code == 422
+    assert dangling.json()["detail"] == "Map nodes not found: B"
+    assert invalid_distance.status_code == 422
+
+
 async def test_create_mission(context: ApiTestContext) -> None:
     robot_response = await context.client.post(
         "/api/v1/robots", json={"manufacturer": "ResearchBot", "serialNumber": "RB003"}

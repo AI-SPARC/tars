@@ -60,22 +60,28 @@ async def get_map(map_id: str, session: SessionDep) -> MapDetailRead:
 
 @router.post("/{map_id}/nodes", status_code=status.HTTP_201_CREATED)
 async def add_node(map_id: str, payload: NodeCreate, session: SessionDep) -> dict[str, str]:
-    node = await MapService(session).add_node(
-        map_id, payload.node_key, payload.x, payload.y, payload.theta
-    )
+    try:
+        node = await MapService(session).add_node(
+            map_id, payload.node_key, payload.x, payload.y, payload.theta
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=_map_error_status(exc), detail=str(exc)) from exc
     return {"id": node.id, "nodeKey": node.node_key}
 
 
 @router.post("/{map_id}/edges", status_code=status.HTTP_201_CREATED)
 async def add_edge(map_id: str, payload: EdgeCreate, session: SessionDep) -> dict[str, str]:
-    edge = await MapService(session).add_edge(
-        map_id,
-        payload.edge_key,
-        payload.from_node_key,
-        payload.to_node_key,
-        payload.distance,
-        payload.bidirectional,
-    )
+    try:
+        edge = await MapService(session).add_edge(
+            map_id,
+            payload.edge_key,
+            payload.from_node_key,
+            payload.to_node_key,
+            payload.distance,
+            payload.bidirectional,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=_map_error_status(exc), detail=str(exc)) from exc
     return {"id": edge.id, "edgeKey": edge.edge_key}
 
 
@@ -90,3 +96,9 @@ async def route_preview(
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return RoutePreviewRead(node_keys=node_keys)
+
+
+def _map_error_status(exc: ValueError) -> int:
+    if str(exc) == "Map not found":
+        return status.HTTP_404_NOT_FOUND
+    return status.HTTP_422_UNPROCESSABLE_CONTENT
