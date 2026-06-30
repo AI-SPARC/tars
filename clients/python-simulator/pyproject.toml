@@ -1,6 +1,6 @@
 [project]
 name = "tars-robot-simulator"
-version = "0.1.0"
+version = "1.0.0"
 description = "Research-friendly VDA 5050 v3.0.0 mobile robot simulator for TARS"
 requires-python = ">=3.12"
 dependencies = [

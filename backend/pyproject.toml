@@ -1,6 +1,6 @@
 [project]
 name = "tars-backend"
-version = "0.1.0"
+version = "1.0.0"
 description = "VDA 5050 v3.0.0 open-source fleet manager backend"
 requires-python = ">=3.12"
 dependencies = [

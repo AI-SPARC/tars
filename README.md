@@ -68,8 +68,8 @@ See:
 
 ## Status
 
-MVP rewrite in progress. Robot discovery and telemetry ingestion, graph maps and routing, mission
-creation, VDA 5050 order dispatch, persistence, MQTT log inspection, real-time WebSocket events,
-a live operations dashboard, fleet/robot detail pages, and a basic simulator are implemented.
-A graph map editor/viewer, mission builder/dispatcher, and filtered MQTT/VDA log inspector are
-also available. Clean-stack Docker E2E, browser smoke tests, and CI quality gates are automated.
+TARS v1.0.0 is the completed operational baseline. It includes robot discovery and telemetry,
+graph maps and routing, mission creation and VDA 5050 order dispatch, persistence, MQTT log
+inspection, real-time WebSocket events, the operator workspaces, and a basic robot simulator.
+Clean-stack Docker E2E, browser smoke tests, and CI quality gates are automated. Planned map
+interoperability and pluggable route-planning work is tracked in `docs/roadmap.md` for post-v1.

@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(
     title="TARS Fleet Manager API",
-    version="0.1.0",
+    version="1.0.0",
     description="Open-source VDA 5050 v3.0.0 fleet manager for research.",
     lifespan=lifespan,
 )
